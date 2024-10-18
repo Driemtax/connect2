@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
+import 'contacts_service.dart';
 import 'package:connect2/screens/person_card_view.dart';
 
 void main() {
@@ -22,6 +24,28 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class LogContactsButton extends StatelessWidget {
+  const LogContactsButton({super.key});
+
+  // Example function for loading and logging contacts from the global contacts
+  void loadAndLogContacts() async {
+    List<Contact> fetchedContacts = await getContacts();
+    
+    for (var contact in fetchedContacts) {
+      print('Contact Name: ${contact.displayName}');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: loadAndLogContacts,
+      child: const Text("Log Contacts to Console"),
+    );
+  }
+}
+
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
@@ -34,7 +58,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Hier definierst du die verschiedenen Views, die je nach ausgewähltem Index angezeigt werden sollen
   static const List<Widget> _widgetOptions = <Widget>[
-    Text('Home View'),
+    LogContactsButton(),
     PersonCardView(),  // Neue View, die in der Navigation Bar angezeigt werden soll
     Text('Notifications View'),
   ];
