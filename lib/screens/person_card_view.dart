@@ -26,40 +26,63 @@ class _PersonCardViewState extends State<PersonCardView> {
 
   // Methode zum Anzeigen eines Dialogs, um den Benutzer nach dem Notiztext zu fragen
   Future<void> _showAddNoteDialog() async {
-    String noteText = '';
+  String noteText = '';
+  bool isError = false; // Zum Überwachen des Fehlerstatus
 
-    await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Neue Notiz hinzufügen'),
-          content: TextField(
-            decoration: const InputDecoration(hintText: "Notiz eingeben"),
-            onChanged: (value) {
-              noteText = value;
-            },
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Abbrechen'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+  await showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Neue Notiz hinzufügen'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: "Notiz eingeben",
+                    errorText: isError ? 'Notiz darf nicht leer sein' : null, // Fehlermeldung anzeigen, wenn leer
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      noteText = value;
+                      if (value.isNotEmpty) {
+                        isError = false; // Fehlerstatus zurücksetzen, wenn Text eingegeben wird
+                      }
+                    });
+                  },
+                ),
+              ],
             ),
-            TextButton(
-              child: const Text('Hinzufügen'),
-              onPressed: () {
-                if (noteText.isNotEmpty) {
-                  _addNotiz(noteText);
-                }
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Abbrechen'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              TextButton(
+                child: const Text('Hinzufügen'),
+                onPressed: () {
+                  if (noteText.isEmpty) {
+                    // Fehlerstatus aktivieren und den Dialog nicht schließen
+                    setState(() {
+                      isError = true;
+                    });
+                  } else {
+                    _addNotiz(noteText);
+                    Navigator.of(context).pop(); // Dialog schließen, wenn die Eingabe korrekt ist
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
