@@ -49,7 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flutter Navigation Example'),
+        title: const Text('Contact2 - Boost your network'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Center(
@@ -59,7 +59,7 @@ class _MyHomePageState extends State<MyHomePage> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => PersonCardView()),
+            MaterialPageRoute(builder: (context) => const PersonCardView()),
           );
         },
         tooltip: 'Increment',
