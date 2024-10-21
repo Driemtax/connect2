@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:connect2/screens/person_card_view.dart';
+import 'package:connect2/screens/home_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,
-      home: const MyHomePage(),
+      home: const HomeView(),
     );
   }
 }
