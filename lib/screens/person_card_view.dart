@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Für die Datumformatierung
+import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 
 class PersonCardView extends StatefulWidget {
   const PersonCardView({super.key});
@@ -9,14 +11,24 @@ class PersonCardView extends StatefulWidget {
 }
 
 class _PersonCardViewState extends State<PersonCardView> {
-  // Liste der Notizen
   final List<Note> _notizenListe = [
     Note(date: '01.01.2023', text: 'Erste Notiz'),
     Note(date: '02.01.2023', text: 'Zweite Notiz'),
     Note(date: '03.01.2023', text: 'Dritte Notiz'),
   ];
 
-  // Methode zum Hinzufügen einer neuen Notiz
+  final List<String> _skills = [
+    "Flutter Development",
+    "Dart Programming",
+    "UI/UX Design",
+    "C Programmierung",
+    "Objektorientierte Programmierung",
+  ];
+
+  File? _imageFile;
+
+  final ImagePicker _picker = ImagePicker();
+
   void _addNotiz(String newText) {
     setState(() {
       String formattedDate = DateFormat('dd.MM.yyyy').format(DateTime.now());
@@ -24,83 +36,129 @@ class _PersonCardViewState extends State<PersonCardView> {
     });
   }
 
-  // Methode zum Anzeigen eines Dialogs, um den Benutzer nach dem Notiztext zu fragen
-  Future<void> _showAddNoteDialog() async {
-  String noteText = '';
-  bool isError = false; // Zum Überwachen des Fehlerstatus
+  void _deleteNotiz(int index) {
+    setState(() {
+      _notizenListe.removeAt(index);
+    });
+  }
 
-  await showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: const Text('Neue Notiz hinzufügen'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: "Notiz eingeben",
-                    errorText: isError ? 'Notiz darf nicht leer sein' : null, // Fehlermeldung anzeigen, wenn leer
+  void _addSkill(String newSkill){
+    setState(() {
+      _skills.add(newSkill);
+    });
+  }
+
+  void _deleteSkill(int index){
+    setState(() {
+      _skills.removeAt(index);
+    });
+  }
+
+  Future<void> _showAddItemDialog(Function(String) onAdd ) async {
+    String itemText = '';
+    bool isError = false;
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Neues Item hinzufügen'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: "Text eingeben",
+                      errorText: isError ? 'Feld darf nicht leer sein' : null,
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        itemText = value;
+                        if (value.isNotEmpty) {
+                          isError = false;
+                        }
+                      });
+                    },
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      noteText = value;
-                      if (value.isNotEmpty) {
-                        isError = false; // Fehlerstatus zurücksetzen, wenn Text eingegeben wird
-                      }
-                    });
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Abbrechen'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: const Text('Hinzufügen'),
+                  onPressed: () {
+                    if (itemText.isEmpty) {
+                      setState(() {
+                        isError = true;
+                      });
+                    } else {
+                      onAdd(itemText);
+                      Navigator.of(context).pop();
+                    }
                   },
                 ),
               ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final pickedFile = await _picker.pickImage(source: source);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
+
+  void _showImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo),
+              title: const Text('Galerie'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
             ),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('Abbrechen'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-              TextButton(
-                child: const Text('Hinzufügen'),
-                onPressed: () {
-                  if (noteText.isEmpty) {
-                    // Fehlerstatus aktivieren und den Dialog nicht schließen
-                    setState(() {
-                      isError = true;
-                    });
-                  } else {
-                    _addNotiz(noteText);
-                    Navigator.of(context).pop(); // Dialog schließen, wenn die Eingabe korrekt ist
-                  }
-                },
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Kamera'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Greife auf das Farbschema des übergeordneten Themas zu
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Person Detail View'),
         backgroundColor: colorScheme.primary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-              // Bearbeiten-Funktion
-            },
-          ),
-        ],
+        foregroundColor: const Color.fromRGBO(255, 255, 255, 1),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -108,16 +166,26 @@ class _PersonCardViewState extends State<PersonCardView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Foto der Person (Platzhalter)
-              Container(
-                width: double.infinity,
-                height: MediaQuery.of(context).size.height * 0.25,
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceVariant,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: Icon(Icons.person, size: 100, color: Colors.grey),
+              InkWell(
+                onTap: _showImageSourceDialog,
+                child: Container(
+                  width: double.infinity,
+                  height: MediaQuery.of(context).size.height * 0.25,
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: _imageFile != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            _imageFile!,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : const Center(
+                          child: Icon(Icons.person, size: 100, color: Colors.grey),
+                        ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -131,164 +199,241 @@ class _PersonCardViewState extends State<PersonCardView> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16), // Abstand zwischen den Elementen
-
-              // Box mit allgemeinen Informationen
-              SizedBox(
-                width: double.infinity, // Maximale Breite der Box
-                child: Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Allgemeine Informationen:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildInfoRow("Geburtsdatum", "01.01.1990", colorScheme),
-                        const SizedBox(height: 8),
-                        _buildInfoRow("Wohnort", "Berlin", colorScheme),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
               const SizedBox(height: 16),
 
-              // Box mit einer Liste von Skills
-              SizedBox(
-                width: double.infinity, // Maximale Breite der Box
-                child: Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Skills:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text('- Flutter Development'),
-                        const Text('- Dart Programming'),
-                        const Text('- UI/UX Design'),
-                        const Text('- C Programmierung'),
-                        const Text('- Objektorientierte Programmierung'),
-                      ],
-                    ),
-                  ),
-                ),
+              // Allgemeine Informationen
+              _buildInfoCard(
+                colorScheme,
+                'Allgemeine Informationen',
+                [
+                  _buildEditableInfoRow("Geburtsdatum", "01.01.1990", colorScheme),
+                  const SizedBox(height: 8),
+                  _buildEditableInfoRow("Wohnort", "Berlin", colorScheme),
+                  const SizedBox(height: 8),
+                  _buildEditableInfoRow("Arbeitgeber / Uni", "", colorScheme)
+                ],
               ),
+
               const SizedBox(height: 16),
 
-              // Box mit Notizen
-              SizedBox(
-                width: double.infinity, // Maximale Breite der Box
-                child: Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Notizen:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.primary,
-                          ),
+              // Skills
+              _buildInfoCard(
+                colorScheme,
+                'Skills',
+                [
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _skills.length,
+                    itemBuilder: (context, index) {
+                      final skill = _skills[index];
+                      return Dismissible(
+                        key: UniqueKey(),
+                        direction: DismissDirection.startToEnd,
+                        onDismissed: (direction) {
+                          _deleteSkill(index);
+                        },
+                        background: Container(
+                          color: Colors.red,
+                          padding: const EdgeInsets.only(left: 16),
+                          alignment: Alignment.centerLeft,
+                          child: const Icon(Icons.delete, color: Colors.white),
                         ),
-                        const SizedBox(height: 8),
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _notizenListe.length,
-                          itemBuilder: (context, index) {
-                            final notiz = _notizenListe[index];
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    notiz.date,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: colorScheme.onSurface,
-                                    ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TextFormField(
+                                initialValue: skill,
+                                readOnly: true,
+                                maxLines: null,
+                                style: TextStyle(color: colorScheme.onSurfaceVariant),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: colorScheme.surfaceContainerHighest,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Text(
-                                      notiz.text,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(color: colorScheme.onSurfaceVariant),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                            );
-                          },
+                              const SizedBox(height: 8),
+                            ],
+                          ),
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
+                  const SizedBox(height: 16),
+                ],
+                floatingActionButton: FloatingActionButton.small(
+                  onPressed: () => _showAddItemDialog(_addSkill),
+                  backgroundColor: colorScheme.primaryContainer,
+                  child: Icon(Icons.add, color: colorScheme.onPrimaryContainer),
                 ),
+              ),          
+
+              // Notizen
+              _buildInfoCard(
+                colorScheme,
+                'Notizen',
+                [
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _notizenListe.length,
+                    itemBuilder: (context, index) {
+                      final notiz = _notizenListe[index];
+                      return Dismissible(
+                        key: UniqueKey(),
+                        direction: DismissDirection.startToEnd,
+                        onDismissed: (direction) {
+                          _deleteNotiz(index);
+                        },
+                        background: Container(
+                          color: Colors.red,
+                          padding: const EdgeInsets.only(left: 16),
+                          alignment: Alignment.centerLeft,
+                          child: const Icon(Icons.delete, color: Colors.white),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                notiz.date,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              TextFormField(
+                                initialValue: notiz.text,
+                                readOnly: true,
+                                maxLines: null,
+                                style: TextStyle(color: colorScheme.onSurfaceVariant),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: colorScheme.surfaceContainerHighest,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16), // Abstand für den Floating Button
+                ],
+                /*floatingActionButton: FloatingActionButton.small(
+                  onPressed: () => _showAddItemDialog(_addNotiz),
+                  backgroundColor: colorScheme.primaryContainer,
+                  child: Icon(Icons.add, color: colorScheme.onPrimaryContainer),
+                )*/
               ),
             ],
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddNoteDialog,
-        backgroundColor: colorScheme.primaryContainer,
-        child: Icon(Icons.add, color: colorScheme.onPrimaryContainer),
-      ),
     );
   }
 
-  // Hilfsmethode zum Erstellen von Info-Reihen
-  Widget _buildInfoRow(String label, String value, ColorScheme colorScheme) {
-    return Row(
+  // Card Widget für Info-Sektionen
+  Widget _buildInfoCard(ColorScheme colorScheme, String title, List<Widget> content, {FloatingActionButton? floatingActionButton}) {
+    return Stack(
       children: [
-        Expanded(
-          flex: 2,
-          child: Text(
-            "$label:",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
+        SizedBox(
+          width: double.infinity,
+          child: Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: colorScheme.primary,
+                width: 1.0,
+                style: BorderStyle.solid)
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$title:',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...content,
+                ],
+              ),
             ),
           ),
         ),
-        Expanded(
-          flex: 3,
-          child: Text(
-            value,
+        if (floatingActionButton != null)
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: floatingActionButton,
+          ),
+      ],
+    );
+  }
+
+  // Editierbare Info-Reihe
+  Widget _buildEditableInfoRow(String? label, String value, ColorScheme colorScheme) {
+    if (label == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextFormField(
+            initialValue: value,
             style: TextStyle(
+              fontSize: 16,
               color: colorScheme.onSurfaceVariant,
+            ),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: colorScheme.surfaceContainerHighest,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "$label:",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 4),
+        TextFormField(
+          initialValue: value,
+          style: TextStyle(
+            fontSize: 16,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: colorScheme.surfaceContainerHighest,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
         ),
@@ -297,7 +442,7 @@ class _PersonCardViewState extends State<PersonCardView> {
   }
 }
 
-// Klasse für die Notizen
+// Notiz-Klasse
 class Note {
   final String date;
   final String text;
