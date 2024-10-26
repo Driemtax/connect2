@@ -1,20 +1,5 @@
 import 'package:flutter_contacts/flutter_contacts.dart';
-
-class PermissionDeniedException implements Exception {
-  final String message;
-  PermissionDeniedException(this.message);
-
-  @override
-  String toString() => 'PermissionDeniedException: $message';
-}
-
-class ContactNotFoundException implements Exception {
-  final String message;
-  ContactNotFoundException(this.message);
-
-  @override
-  String toString() => 'ContactNotFoundException: $message';
-}
+import 'package:connect2/exceptions/exceptions.dart';
 
 
 /// Retrieves a list of all contacts from the device's contact list.
