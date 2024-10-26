@@ -43,3 +43,22 @@ Future<Contact> getContact(String id) async {
     throw PermissionDeniedException('Contact permissions were not granted.');
   }
 }
+
+/// Saves the modified contact by updating it in the device's contact list.
+///
+/// This function takes a modified `Contact` object and saves it.
+/// If permission is not granted, it throws an exception.
+///
+/// - Parameter contact: The modified `Contact` object to save.
+/// - Throws: `PermissionDeniedException` if contact permissions are not granted.
+Future<void> saveModifiedContact(Contact contact) async {
+  if (await FlutterContacts.requestPermission()) {
+    try {
+      await FlutterContacts.updateContact(contact);
+    } catch (e) {
+      throw Exception('Failed to update contact: ${e.toString()}');
+    }
+  } else {
+    throw PermissionDeniedException('Contact permissions were not granted.');
+  }
+}
