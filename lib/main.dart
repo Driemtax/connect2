@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
-import 'contacts_service.dart';
+import 'services/contacts_service.dart';
 import 'package:connect2/screens/person_card_view.dart';
 
 void main() {
