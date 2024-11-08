@@ -1,3 +1,4 @@
+import 'package:connect2/components/graph_view/graph_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'contacts_service.dart';
@@ -57,10 +58,10 @@ class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
 
   // Hier definierst du die verschiedenen Views, die je nach ausgewähltem Index angezeigt werden sollen
-  static const List<Widget> _widgetOptions = <Widget>[
-    LogContactsButton(),
-    PersonCardView(),  // Neue View, die in der Navigation Bar angezeigt werden soll
-    Text('Notifications View'),
+  static final List<Widget> _widgetOptions = <Widget>[
+    const LogContactsButton(),
+    const PersonCardView(),  // Neue View, die in der Navigation Bar angezeigt werden soll
+    const GraphViewCanvas(),
   ];
 
   void _onItemTapped(int index) {
