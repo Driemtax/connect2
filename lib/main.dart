@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,
-      home: const HomeView(),
+      home: const MyHomePage(),
     );
   }
 }
@@ -35,7 +35,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Hier definierst du die verschiedenen Views, die je nach ausgewähltem Index angezeigt werden sollen
   static const List<Widget> _widgetOptions = <Widget>[
-    Text('Home View'),
+    HomeContent(),
     PersonCardView(),  // Neue View, die in der Navigation Bar angezeigt werden soll
     Text('Notifications View'),
   ];
@@ -55,16 +55,6 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),  // Wählt die View basierend auf dem Index aus
-      ),
-      floatingActionButton: FloatingActionButton.large(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => PersonCardView()),
-          );
-        },
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,  // Der aktuell ausgewählte Index
