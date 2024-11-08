@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
-import 'services/contacts_service.dart';
 import 'package:connect2/screens/person_card_view.dart';
+import 'package:connect2/screens/home_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -24,28 +23,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class LogContactsButton extends StatelessWidget {
-  const LogContactsButton({super.key});
-
-  // Example function for loading and logging contacts from the global contacts
-  void loadAndLogContacts() async {
-    List<Contact> fetchedContacts = await getContacts();
-    
-    for (var contact in fetchedContacts) {
-      print('Contact Name: ${contact.displayName}');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: loadAndLogContacts,
-      child: const Text("Log Contacts to Console"),
-    );
-  }
-}
-
-
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
@@ -58,7 +35,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Hier definierst du die verschiedenen Views, die je nach ausgewähltem Index angezeigt werden sollen
   static const List<Widget> _widgetOptions = <Widget>[
-    LogContactsButton(),
+    HomeContent(),
     PersonCardView(),  // Neue View, die in der Navigation Bar angezeigt werden soll
     Text('Notifications View'),
   ];
@@ -78,16 +55,6 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),  // Wählt die View basierend auf dem Index aus
-      ),
-      floatingActionButton: FloatingActionButton.large(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => PersonCardView()),
-          );
-        },
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,  // Der aktuell ausgewählte Index
