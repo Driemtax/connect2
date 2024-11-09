@@ -101,10 +101,14 @@ class GraphPainter extends CustomPainter {
         maxWidth: size.width,
       );
       for (var toNode in node.edgesTo) {
-        canvas.drawLine(node.pos, toNode.pos, edgePaint);
+        if (!toNode.centerNode && !node.centerNode) {
+          canvas.drawLine(node.pos, toNode.pos, edgePaint);
+        }
       }
-      canvas.drawCircle(node.pos, 5, nodePaint);
-      textPainter.paint(canvas, Offset(node.pos.dx - (textPainter.size.width / 2), node.pos.dy - 17.5));
+      if (!node.centerNode) {
+        canvas.drawCircle(node.pos, 5, nodePaint);
+        textPainter.paint(canvas, Offset(node.pos.dx - (textPainter.size.width / 2), node.pos.dy - 17.5));
+      }
     }
   }
 
