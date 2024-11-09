@@ -19,12 +19,12 @@ class GraphViewState extends State<GraphViewCanvas> {
   @override
   void initState() {
     super.initState();
-    nodes.add(Node(const Offset(150.0, 300.0), [], true));
+    nodes.add(Node(const Offset(150.0, 300.0), [], true, "Center Force"));
     for (int i = 0; i < 30; i++) {
       nodes.add(Node(
           Offset(random.nextDouble() * 256, random.nextDouble() * 256),
           [],
-          false));
+          false, "Lukas Heberling"));
     }
 
     // Center force node
@@ -89,22 +89,22 @@ class GraphPainter extends CustomPainter {
       color: Colors.black,
       fontSize: 10,
     );
-    const textSpan = TextSpan(
-      text: 'Hello, world.',
-      style: textStyle,
-    );
-    final textPainter = TextPainter(text: textSpan, textDirection: TextDirection.ltr);
-    textPainter.layout(
-      minWidth: 0,
-      maxWidth: size.width,
-    );
 
     for (var node in nodes) {
+      final textSpan = TextSpan(
+        text: node.name,
+        style: textStyle,
+      );
+      final textPainter = TextPainter(text: textSpan, textDirection: TextDirection.ltr);
+      textPainter.layout(
+        minWidth: 0,
+        maxWidth: size.width,
+      );
       for (var toNode in node.edgesTo) {
         canvas.drawLine(node.pos, toNode.pos, edgePaint);
       }
       canvas.drawCircle(node.pos, 5, nodePaint);
-      textPainter.paint(canvas, Offset(node.pos.dx - 25, node.pos.dy - 15));
+      textPainter.paint(canvas, Offset(node.pos.dx - (textPainter.size.width / 2), node.pos.dy - 17.5));
     }
   }
 

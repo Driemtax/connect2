@@ -4,8 +4,9 @@ class Node {
   Offset pos;
   List<Node> edgesTo;
   bool centerNode;
+  String name;
 
-  Node(this.pos, this.edgesTo, this.centerNode);
+  Node(this.pos, this.edgesTo, this.centerNode, this.name);
 
   void addEdgeTo(Node toNode) {
     edgesTo.add(toNode);
