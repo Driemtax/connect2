@@ -6,51 +6,32 @@ import 'package:connect2/components/graph_view/node.dart';
 import 'package:flutter/material.dart';
 
 class GraphViewCanvas extends StatefulWidget {
-  const GraphViewCanvas({super.key});
+  final List<Node> initialNodes;
+  const GraphViewCanvas({super.key, required this.initialNodes});
 
   @override
-  GraphViewState createState() => GraphViewState();
+  GraphViewCanvasState createState() => GraphViewCanvasState();
 }
 
-class GraphViewState extends State<GraphViewCanvas> {
+class GraphViewCanvasState extends State<GraphViewCanvas> {
   List<Node> nodes = [];
   Random random = Random();
 
   @override
   void initState() {
     super.initState();
-    nodes.add(Node(const Offset(150.0, 300.0), [], true, "Center Force"));
-    for (int i = 0; i < 30; i++) {
-      nodes.add(Node(
-          Offset(random.nextDouble() * 256, random.nextDouble() * 256),
-          [],
-          false, "Lukas Heberling"));
-    }
-
+    nodes = List.from(widget.initialNodes);
+    Node centerForce = Node(const Offset(150.0, 300.0), [], true, "Center Force");
     // Center force node
-    for (var node in nodes) {
-      node.addEdgeTo(nodes[0]);
-      nodes[0].addEdgeTo(node);
+    for (var node in nodes) {        
+      node.addEdgeTo(centerForce);
+      centerForce.addEdgeTo(node);
     }
-
-    nodes[1].addEdgeTo(nodes[0]);
-    nodes[0].addEdgeTo(nodes[1]);
-    nodes[12].addEdgeTo(nodes[0]);
-    nodes[0].addEdgeTo(nodes[12]);
-
-    for (int i = 2; i < 12; i++) {
-      nodes[1].addEdgeTo(nodes[i]);
-      nodes[i].addEdgeTo(nodes[1]);
-    }
-
-    for (int i = 12; i < 25; i++) {
-      nodes[12].addEdgeTo(nodes[i]);
-      nodes[i].addEdgeTo(nodes[12]);
-    }
+    nodes.add(centerForce);
 
     Timer.periodic(const Duration(milliseconds: 3), (timer) {
       setState(() {
-        nodes = eadesAlgorithm(nodes);
+        nodes = forceDirectedGraphAlgorithm(nodes);
       });
     });
   }

@@ -49,7 +49,8 @@ Offset calcDisplacement(Node currentNode, List<Node> nodes) {
   return totalDisplacement * dampingFactor;
 }
 
-List<Node> eadesAlgorithm(List<Node> nodes) {
+/// A force directed graph algorithm using the eades method
+List<Node> forceDirectedGraphAlgorithm(List<Node> nodes) {
   for (int i = 0; i < 5; i++) {
     for (var node in nodes) {
       Offset displacement = calcDisplacement(node, nodes);

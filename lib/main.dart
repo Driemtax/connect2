@@ -1,4 +1,4 @@
-import 'package:connect2/components/graph_view/graph_view.dart';
+import 'package:connect2/screens/graph_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'contacts_service.dart';
@@ -61,7 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
   static final List<Widget> _widgetOptions = <Widget>[
     const LogContactsButton(),
     const PersonCardView(),  // Neue View, die in der Navigation Bar angezeigt werden soll
-    const GraphViewCanvas(),
+    const GraphScreen(),
   ];
 
   void _onItemTapped(int index) {
