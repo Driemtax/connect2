@@ -4,10 +4,10 @@ class Tag {
 
   Tag({this.id, required this.name});
 
-  Map<String, dynamic> toMap(Tag contactTag) {
+  Map<String, dynamic> toMap() {
     return {
-      'id': contactTag.id,
-      'name': contactTag.name,
+      'id': id,
+      'name': name,
     };
   }
 
