@@ -6,11 +6,11 @@ class ContactDetailTag {
 
   ContactDetailTag({this.id, required this.contactDetailId, required this.tagId});
 
-  Map<String, dynamic> toMap(ContactDetailTag contactDetailTag) {
+  Map<String, dynamic> toMap() {
     return {
-      'id': contactDetailTag.id,
-      'contactDetailId': contactDetailTag.contactDetailId,
-      'tagId': contactDetailTag.tagId,
+      'id': id,
+      'contactDetailId': contactDetailId,
+      'tagId': tagId,
     };
   }
 
