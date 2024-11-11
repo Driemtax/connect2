@@ -11,12 +11,12 @@ class ContactDetailRelation {
       required this.contactDetailId1,
       required this.contactDetailId2});
 
-  Map<String, dynamic> toMap(ContactDetailRelation contactDetailRelation) {
+  Map<String, dynamic> toMap() {
     return {
-      'id': contactDetailRelation.id,
-      'relationName': contactDetailRelation.relationName,
-      'contactDetailId1': contactDetailRelation.contactDetailId1,
-      'contactDetailId2': contactDetailRelation.contactDetailId2,
+      'id': id,
+      'relationName': relationName,
+      'contactDetailId1': contactDetailId1,
+      'contactDetailId2': contactDetailId2,
     };
   }
 
