@@ -7,16 +7,25 @@ class PersonCardView extends StatefulWidget {
   const PersonCardView({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _PersonCardViewState createState() => _PersonCardViewState();
 }
 
 class _PersonCardViewState extends State<PersonCardView> {
-  final List<Note> _notizenListe = [
+  // General Information
+  String _name = "Jannis Neuhaus";
+  String _birthDate = "01.01.1990";
+  String _residence = "Mannheim";
+  String _employer = "Bauhaus";
+
+  // Notes
+  final List<Note> _noteList = [
     Note(date: '01.01.2023', text: 'Erste Notiz'),
     Note(date: '02.01.2023', text: 'Zweite Notiz'),
     Note(date: '03.01.2023', text: 'Dritte Notiz'),
   ];
 
+  // Skills
   final List<String> _skills = [
     "Flutter Development",
     "Dart Programming",
@@ -26,19 +35,27 @@ class _PersonCardViewState extends State<PersonCardView> {
   ];
 
   File? _imageFile;
-
   final ImagePicker _picker = ImagePicker();
+
+  void updatePersonalInfo(String name, String birthDate, String residence, String employer) {
+    setState(() {
+      _name = name;
+      _birthDate = birthDate;
+      _residence = residence;
+      _employer = employer;
+    });
+  }
 
   void _addNotiz(String newText) {
     setState(() {
       String formattedDate = DateFormat('dd.MM.yyyy').format(DateTime.now());
-      _notizenListe.add(Note(date: formattedDate, text: newText));
+      _noteList.add(Note(date: formattedDate, text: newText));
     });
   }
 
   void _deleteNotiz(int index) {
     setState(() {
-      _notizenListe.removeAt(index);
+      _noteList.removeAt(index);
     });
   }
 
@@ -156,7 +173,7 @@ class _PersonCardViewState extends State<PersonCardView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Person Detail View'),
+        title: const Text('Kontakt'),
         backgroundColor: colorScheme.primary,
         foregroundColor: const Color.fromRGBO(255, 255, 255, 1),
       ),
@@ -191,7 +208,7 @@ class _PersonCardViewState extends State<PersonCardView> {
               const SizedBox(height: 16),
               Center(
                 child: Text(
-                  "Jannis Neuhaus",
+                  _name,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -206,11 +223,11 @@ class _PersonCardViewState extends State<PersonCardView> {
                 colorScheme,
                 'Allgemeine Informationen',
                 [
-                  _buildEditableInfoRow("Geburtsdatum", "01.01.1990", colorScheme),
+                  _buildEditableInfoRow("Geburtsdatum", _birthDate, colorScheme),
                   const SizedBox(height: 8),
-                  _buildEditableInfoRow("Wohnort", "Berlin", colorScheme),
+                  _buildEditableInfoRow("Wohnort", _residence, colorScheme),
                   const SizedBox(height: 8),
-                  _buildEditableInfoRow("Arbeitgeber / Uni", "", colorScheme)
+                  _buildEditableInfoRow("Arbeitgeber / Uni", _employer, colorScheme)
                 ],
               ),
 
@@ -219,7 +236,7 @@ class _PersonCardViewState extends State<PersonCardView> {
               // Skills
               _buildInfoCard(
                 colorScheme,
-                'Skills',
+                'Fähigkeiten',
                 [
                   ListView.builder(
                     shrinkWrap: true,
@@ -281,9 +298,9 @@ class _PersonCardViewState extends State<PersonCardView> {
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _notizenListe.length,
+                    itemCount: _noteList.length,
                     itemBuilder: (context, index) {
-                      final notiz = _notizenListe[index];
+                      final notiz = _noteList[index];
                       return Dismissible(
                         key: UniqueKey(),
                         direction: DismissDirection.startToEnd,
@@ -330,11 +347,11 @@ class _PersonCardViewState extends State<PersonCardView> {
                   ),
                   const SizedBox(height: 16), // Abstand für den Floating Button
                 ],
-                /*floatingActionButton: FloatingActionButton.small(
+                floatingActionButton: FloatingActionButton.small(
                   onPressed: () => _showAddItemDialog(_addNotiz),
                   backgroundColor: colorScheme.primaryContainer,
                   child: Icon(Icons.add, color: colorScheme.onPrimaryContainer),
-                )*/
+                )
               ),
             ],
           ),
@@ -343,7 +360,6 @@ class _PersonCardViewState extends State<PersonCardView> {
     );
   }
 
-  // Card Widget für Info-Sektionen
   Widget _buildInfoCard(ColorScheme colorScheme, String title, List<Widget> content, {FloatingActionButton? floatingActionButton}) {
     return Stack(
       children: [
@@ -388,7 +404,6 @@ class _PersonCardViewState extends State<PersonCardView> {
     );
   }
 
-  // Editierbare Info-Reihe
   Widget _buildEditableInfoRow(String? label, String value, ColorScheme colorScheme) {
     if (label == null) {
       return Column(
@@ -442,7 +457,6 @@ class _PersonCardViewState extends State<PersonCardView> {
   }
 }
 
-// Notiz-Klasse
 class Note {
   final String date;
   final String text;
