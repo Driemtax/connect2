@@ -32,6 +32,3 @@ doc/api/
 
 # Gradle build settings
 .idea/
-android/
-gradle/
-.gradle
