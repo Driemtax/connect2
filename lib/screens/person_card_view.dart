@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'package:connect2/helper/contact_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:connect2/models/note.dart';
 
 class PersonCardView extends StatefulWidget {
   const PersonCardView({super.key});
@@ -13,16 +15,17 @@ class PersonCardView extends StatefulWidget {
 }
 
 class _PersonCardViewState extends State<PersonCardView> {
+  late ContactManager _contactManager;
   // General Information
   String _name = "Jannis Neuhaus";
-  DateTime? _birthDate = null;
+  DateTime? _birthDate;
   String _residence = "Mannheim";
   String _employer = "Bauhaus";
 
   Future<void> _pickBirthDate() async {
     DateTime? pickedDate = await showDatePicker(
       context: context, 
-      initialDate: _birthDate, 
+      initialDate: _birthDate ?? DateTime.now(), 
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
       );
@@ -30,6 +33,7 @@ class _PersonCardViewState extends State<PersonCardView> {
     if (pickedDate != null){
       setState(() {
         _birthDate = pickedDate;
+        _contactManager.updateContactField('birthDate', pickedDate.toIso8601String());
       });
     }
   }
@@ -53,6 +57,20 @@ class _PersonCardViewState extends State<PersonCardView> {
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
 
+  @override
+  void initState() {
+    super.initState();
+    _contactManager = ContactManager(1, 
+    {
+      'name': _name,
+      'birthDate': _birthDate,
+      'residence': _residence,
+      'employer': _employer,
+      'notes': _noteList.map((note) => note.toJson()).toList(),
+      'skills': _skills
+    });
+  }
+
   void updatePersonalInfo(String name, DateTime birthDate, String residence, String employer) {
     setState(() {
       _name = name;
@@ -62,28 +80,32 @@ class _PersonCardViewState extends State<PersonCardView> {
     });
   }
 
-  void _addNotiz(String newText) {
+  void _addNote(String newText) {
     setState(() {
       String formattedDate = DateFormat('dd.MM.yyyy').format(DateTime.now());
       _noteList.add(Note(date: formattedDate, text: newText));
+      _contactManager.updateContactField('notes', _noteList.map((note) => note.toJson()).toList());
     });
   }
 
-  void _deleteNotiz(int index) {
+  void _deleteNote(int index) {
     setState(() {
       _noteList.removeAt(index);
+      _contactManager.updateContactField('notes', _noteList.map((note) => note.toJson()).toList());
     });
   }
 
   void _addSkill(String newSkill){
     setState(() {
       _skills.add(newSkill);
+      _contactManager.updateContactField('skills', _skills);
     });
   }
 
   void _deleteSkill(int index){
     setState(() {
       _skills.removeAt(index);
+      _contactManager.updateContactField('skills', _skills);
     });
   }
 
@@ -146,7 +168,6 @@ class _PersonCardViewState extends State<PersonCardView> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    // Check permission
     PermissionStatus status;
 
     if (source == ImageSource.camera){
@@ -162,6 +183,7 @@ class _PersonCardViewState extends State<PersonCardView> {
         if (pickedFile != null) {
           setState(() {
             _imageFile = File(pickedFile.path);
+            _contactManager.updateContactField('imagePath', pickedFile.path);
           });
         } else if (status.isDenied || status.isPermanentlyDenied) {
           _showPermissionDialog(source);
@@ -178,7 +200,7 @@ class _PersonCardViewState extends State<PersonCardView> {
     );
     }    
   }
-
+  
   void _showPermissionDialog(ImageSource source) {
   showDialog(
     context: context,
@@ -205,26 +227,6 @@ class _PersonCardViewState extends State<PersonCardView> {
       );
     },
   );
-}
-
-  Future<PermissionStatus> _requestPermission(ImageSource source) async {
-  Permission permission;
-
-  if (source == ImageSource.camera) {
-    permission = Permission.camera;
-  } else if (source == ImageSource.gallery) {
-    permission = Permission.photos;
-  } else {
-    throw Exception("Ungültige Quelle");
-  }
-
-  final status = await permission.request();
-
-  if (status.isPermanentlyDenied) {
-    await openAppSettings();
-  }
-
-  return status;
 }
 
 
@@ -395,7 +397,7 @@ class _PersonCardViewState extends State<PersonCardView> {
                         key: UniqueKey(),
                         direction: DismissDirection.startToEnd,
                         onDismissed: (direction) {
-                          _deleteNotiz(index);
+                          _deleteNote(index);
                         },
                         background: Container(
                           color: Colors.red,
@@ -439,7 +441,7 @@ class _PersonCardViewState extends State<PersonCardView> {
                 ],
                 floatingActionButton: 
                   FloatingActionButton.small(
-                  onPressed: () => _showAddItemDialog(_addNotiz),
+                  onPressed: () => _showAddItemDialog(_addNote),
                   backgroundColor: colorScheme.primaryContainer,
                   child: Icon(Icons.add, color: colorScheme.onPrimaryContainer),
                 )
@@ -564,8 +566,20 @@ class _PersonCardViewState extends State<PersonCardView> {
           ),
         ),
         const SizedBox(height: 4),
-        TextFormField(
-          initialValue: value,
+        TextField(
+          controller: TextEditingController(text: value),
+          onChanged: (newValue) {
+            setState(() {
+              if (label == 'Wohnort') {
+                _residence = newValue;
+                _contactManager.updateContactField('residence', newValue);
+              }
+              else if (label == 'Arbeitgeber / Uni') {
+                _employer = newValue;
+                _contactManager.updateContactField('employer', newValue);
+              }
+            });
+          },
           style: TextStyle(
             fontSize: 16,
             color: colorScheme.onSurfaceVariant,
@@ -581,11 +595,4 @@ class _PersonCardViewState extends State<PersonCardView> {
       ],
     );
   }
-}
-
-class Note {
-  final String date;
-  final String text;
-
-  Note({required this.date, required this.text});
 }
