@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class PersonCardView extends StatefulWidget {
   const PersonCardView({super.key});
@@ -14,9 +15,24 @@ class PersonCardView extends StatefulWidget {
 class _PersonCardViewState extends State<PersonCardView> {
   // General Information
   String _name = "Jannis Neuhaus";
-  String _birthDate = "01.01.1990";
+  DateTime? _birthDate = null;
   String _residence = "Mannheim";
   String _employer = "Bauhaus";
+
+  Future<void> _pickBirthDate() async {
+    DateTime? pickedDate = await showDatePicker(
+      context: context, 
+      initialDate: _birthDate, 
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      );
+
+    if (pickedDate != null){
+      setState(() {
+        _birthDate = pickedDate;
+      });
+    }
+  }
 
   // Notes
   final List<Note> _noteList = [
@@ -37,7 +53,7 @@ class _PersonCardViewState extends State<PersonCardView> {
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
 
-  void updatePersonalInfo(String name, String birthDate, String residence, String employer) {
+  void updatePersonalInfo(String name, DateTime birthDate, String residence, String employer) {
     setState(() {
       _name = name;
       _birthDate = birthDate;
@@ -130,13 +146,87 @@ class _PersonCardViewState extends State<PersonCardView> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final pickedFile = await _picker.pickImage(source: source);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
+    // Check permission
+    PermissionStatus status;
+
+    if (source == ImageSource.camera){
+      status = await Permission.camera.request();
     }
+    else {
+      status = await Permission.photos.request();
+    }
+
+    if (status.isGranted){
+      try {
+        final pickedFile = await _picker.pickImage(source: source);
+        if (pickedFile != null) {
+          setState(() {
+            _imageFile = File(pickedFile.path);
+          });
+        } else if (status.isDenied || status.isPermanentlyDenied) {
+          _showPermissionDialog(source);
+        }
+      } catch (e) {
+        print("Fehler beim Aufnehmen oder Laden des Bildes: $e");
+      }
+    }
+    else {
+      ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Keine Berechtigung für ${source == ImageSource.camera ? "Kamera" : "Galerie"} erteilt.'),
+      ),
+    );
+    }    
   }
+
+  void _showPermissionDialog(ImageSource source) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Berechtigung benötigt'),
+        content: const Text(
+            'Diese Berechtigung wird benötigt, um auf die Kamera oder die Galerie zugreifen zu können.'),
+        actions: [
+          TextButton(
+            child: const Text('Abbrechen'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: const Text('Zu den Einstellungen'),
+            onPressed: () {
+              Navigator.of(context).pop();
+              openAppSettings();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+  Future<PermissionStatus> _requestPermission(ImageSource source) async {
+  Permission permission;
+
+  if (source == ImageSource.camera) {
+    permission = Permission.camera;
+  } else if (source == ImageSource.gallery) {
+    permission = Permission.photos;
+  } else {
+    throw Exception("Ungültige Quelle");
+  }
+
+  final status = await permission.request();
+
+  if (status.isPermanentlyDenied) {
+    await openAppSettings();
+  }
+
+  return status;
+}
+
 
   void _showImageSourceDialog() {
     showModalBottomSheet(
@@ -223,7 +313,7 @@ class _PersonCardViewState extends State<PersonCardView> {
                 colorScheme,
                 'Allgemeine Informationen',
                 [
-                  _buildEditableInfoRow("Geburtsdatum", _birthDate, colorScheme),
+                  _buildDatePickerRow("Geburtsdatum", _birthDate, colorScheme),
                   const SizedBox(height: 8),
                   _buildEditableInfoRow("Wohnort", _residence, colorScheme),
                   const SizedBox(height: 8),
@@ -345,9 +435,10 @@ class _PersonCardViewState extends State<PersonCardView> {
                       );
                     },
                   ),
-                  const SizedBox(height: 16), // Abstand für den Floating Button
+                  const SizedBox(height: 16),
                 ],
-                floatingActionButton: FloatingActionButton.small(
+                floatingActionButton: 
+                  FloatingActionButton.small(
                   onPressed: () => _showAddItemDialog(_addNotiz),
                   backgroundColor: colorScheme.primaryContainer,
                   child: Icon(Icons.add, color: colorScheme.onPrimaryContainer),
@@ -357,6 +448,41 @@ class _PersonCardViewState extends State<PersonCardView> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDatePickerRow(String label, DateTime? date, ColorScheme colorScheme){
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "$label:",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 4,),
+        InkWell(
+          onTap: _pickBirthDate,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              border: Border.all(color: colorScheme.primary),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              date != null ? DateFormat('dd.MM.yyyy').format(date) : "",
+              style: TextStyle(
+                fontSize: 16,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        )
+      ],
     );
   }
 
@@ -395,9 +521,9 @@ class _PersonCardViewState extends State<PersonCardView> {
           ),
         ),
         if (floatingActionButton != null)
-          Positioned(
-            bottom: 0,
-            right: 0,
+        Positioned(
+            bottom: 16,
+            right: 16,
             child: floatingActionButton,
           ),
       ],
