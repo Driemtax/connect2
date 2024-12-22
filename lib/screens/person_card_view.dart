@@ -109,6 +109,8 @@ class _PersonCardViewState extends State<PersonCardView> {
     });
   }
 
+  /// This method shows a pop up to create a new entry to a list. This is used for the skills and the notes.
+  /// The input field is not allowed to be empty.
   Future<void> _showAddItemDialog(Function(String) onAdd ) async {
     String itemText = '';
     bool isError = false;
@@ -229,7 +231,7 @@ class _PersonCardViewState extends State<PersonCardView> {
   );
 }
 
-
+/// Shows the Dialog to select between Camera and Gallery of the phone. Only opens the selected source if the user gives permission to do so
   void _showImageSourceDialog() {
     showModalBottomSheet(
       context: context,
