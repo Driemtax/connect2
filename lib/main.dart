@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,
@@ -35,6 +35,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
 
   static final List<Widget> _widgetOptions = <Widget>[
+    const HomeContent(),
     const PersonCardView(), 
     const GraphScreen(),
   ];
@@ -49,11 +50,21 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flutter Navigation Example'),
+        title: const Text('Contact2 - Boost your network'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Center(
-        child: _widgetOptions.elementAt(_selectedIndex), 
+        child: _widgetOptions.elementAt(_selectedIndex),  // Wählt die View basierend auf dem Index aus
+      ),
+      floatingActionButton: FloatingActionButton.large(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const PersonCardView()),
+          );
+        },
+        tooltip: 'Increment',
+        child: const Icon(Icons.add),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,  
