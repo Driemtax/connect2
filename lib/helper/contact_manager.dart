@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 
 class ContactManager {
-  final int? contactId;
+  final int contactId;
   Map<String, dynamic> contactData = {};
   Timer? _debounceTimer;
 
@@ -14,10 +14,6 @@ class ContactManager {
   ContactManager.withId(this.contactId) {
     contactData = {};
   }
-
-  ContactManager.empty() :
-    contactId = null,
-    contactData = {};
 
   // Method will be called on every change
   void updateContactField(String field, dynamic value) {
@@ -32,6 +28,14 @@ class ContactManager {
   Future<void> _saveContactToDatabase() async {
     print("Speichere Kontakt in der Datenbank: $contactData");
     // TODO Update database here
+    Contact updatedContact = Contact();
+    updatedContact.id = contactId.toString();
+    updatedContact.name.first = contactData["name"];
+    updatedContact.addresses.first = Address(contactData["residence"]);
+    updatedContact.organizations.first = contactData["employer"];
+
+    // Save updated Contact to phone contacts
+    saveModifiedContact(updatedContact);
     // await database.update(contactId, contactData);
   }
 
