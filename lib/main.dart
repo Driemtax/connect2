@@ -1,5 +1,7 @@
+import 'package:connect2/screens/graph_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:connect2/screens/person_card_view.dart';
+import 'package:connect2/screens/home_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,16 +34,14 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
 
-  // Hier definierst du die verschiedenen Views, die je nach ausgewähltem Index angezeigt werden sollen
-  static const List<Widget> _widgetOptions = <Widget>[
-    Text('Home View'),
-    PersonCardView(),  // Neue View, die in der Navigation Bar angezeigt werden soll
-    Text('Notifications View'),
+  static final List<Widget> _widgetOptions = <Widget>[
+    const PersonCardView(), 
+    const GraphScreen(),
   ];
 
   void _onItemTapped(int index) {
     setState(() {
-      _selectedIndex = index;  // Aktualisiert den ausgewählten Index
+      _selectedIndex = index;  
     });
   }
 
@@ -66,8 +66,8 @@ class _MyHomePageState extends State<MyHomePage> {
         child: const Icon(Icons.add),
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,  // Der aktuell ausgewählte Index
-        onDestinationSelected: _onItemTapped,  // Ruft die Funktion auf, um den Index zu ändern
+        selectedIndex: _selectedIndex,  
+        onDestinationSelected: _onItemTapped,  
         indicatorColor: Theme.of(context).colorScheme.inversePrimary,
         destinations: const <Widget>[
           NavigationDestination(
