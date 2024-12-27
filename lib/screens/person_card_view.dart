@@ -5,22 +5,70 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:connect2/models/note.dart';
+import 'package:connect2/main.dart';
 
 class PersonCardView extends StatefulWidget {
-  const PersonCardView({super.key});
-
+  final int contactId;
+  const PersonCardView({Key? key, required this.contactId}) : super(key: key);
   @override
   // ignore: library_private_types_in_public_api
   _PersonCardViewState createState() => _PersonCardViewState();
 }
 
 class _PersonCardViewState extends State<PersonCardView> {
+  late int contactId;
   late ContactManager _contactManager;
+  bool _isLoading = true;
   // General Information
-  String _name = "Jannis Neuhaus";
+  String _name = "";
   DateTime? _birthDate;
-  String _residence = "Mannheim";
-  String _employer = "Bauhaus";
+  String _residence = "";
+  String _employer = "";
+  // Notes
+  final List<Note> _noteList = [];
+
+  // Skills
+  final List<String> _skills = [];
+
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    contactId = widget.contactId;
+    _contactManager = ContactManager.withId(contactId);
+    _initializeData();
+    
+  }
+
+  Future<void> _initializeData() async {
+    await _contactManager.loadContactFromDatabase();
+    setState(() {
+      _name = _contactManager.contactData["name"] ?? "";
+      _birthDate = _contactManager.contactData["birthDate"];
+      _residence = _contactManager.contactData["residence"] ?? "";
+      _employer = _contactManager.contactData["employer"] ?? "";
+
+      // Notes
+      _noteList.clear();
+      final List<Map<String, dynamic>> notesFromDb = _contactManager.contactData["notes"] ?? [];
+      for (var noteData in notesFromDb) {
+        _noteList.add(Note(
+          date: noteData["date"] ?? "",
+          text: noteData["text"] ?? "",
+        ));
+      }
+
+
+      // Skills
+      _skills.clear();
+      final List<String> skillsFromDb = _contactManager.contactData["skills"] ?? [];
+      _skills.addAll(skillsFromDb);
+
+      _isLoading = false;
+    });
+  }
 
   Future<void> _pickBirthDate() async {
     DateTime? pickedDate = await showDatePicker(
@@ -36,39 +84,6 @@ class _PersonCardViewState extends State<PersonCardView> {
         _contactManager.updateContactField('birthDate', pickedDate.toIso8601String());
       });
     }
-  }
-
-  // Notes
-  final List<Note> _noteList = [
-    Note(date: '01.01.2023', text: 'Erste Notiz'),
-    Note(date: '02.01.2023', text: 'Zweite Notiz'),
-    Note(date: '03.01.2023', text: 'Dritte Notiz'),
-  ];
-
-  // Skills
-  final List<String> _skills = [
-    "Flutter Development",
-    "Dart Programming",
-    "UI/UX Design",
-    "C Programmierung",
-    "Objektorientierte Programmierung",
-  ];
-
-  File? _imageFile;
-  final ImagePicker _picker = ImagePicker();
-
-  @override
-  void initState() {
-    super.initState();
-    _contactManager = ContactManager(1, 
-    {
-      'name': _name,
-      'birthDate': _birthDate,
-      'residence': _residence,
-      'employer': _employer,
-      'notes': _noteList.map((note) => note.toJson()).toList(),
-      'skills': _skills
-    });
   }
 
   void updatePersonalInfo(String name, DateTime birthDate, String residence, String employer) {
@@ -265,11 +280,25 @@ class _PersonCardViewState extends State<PersonCardView> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kontakt'),
         backgroundColor: colorScheme.primary,
         foregroundColor: const Color.fromRGBO(255, 255, 255, 1),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const MyApp()),
+              (Route<dynamic> route) => false,
+            );
+          },
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
