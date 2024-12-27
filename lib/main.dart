@@ -1,6 +1,6 @@
 import 'package:connect2/screens/graph_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:connect2/screens/person_card_view.dart';
+import 'package:connect2/screens/first_own_card.dart';
 import 'package:connect2/screens/home_view.dart';
 
 void main() {
@@ -35,9 +35,9 @@ class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
 
   static final List<Widget> _widgetOptions = <Widget>[
-    const HomeContent(),
-    const PersonCardView(), 
+    const HomeContent(), 
     const GraphScreen(),
+    const OwnContactView()
   ];
 
   void _onItemTapped(int index) {
@@ -56,16 +56,16 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),  // Wählt die View basierend auf dem Index aus
       ),
-      floatingActionButton: FloatingActionButton.large(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const PersonCardView()),
-          );
-        },
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+      // floatingActionButton: FloatingActionButton.large(
+      //   onPressed: () {
+      //     Navigator.push(
+      //       context,
+      //       MaterialPageRoute(builder: (context) => const PersonCardView()),
+      //     );
+      //   },
+      //   tooltip: 'Increment',
+      //   child: const Icon(Icons.add),
+      // ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,  
         onDestinationSelected: _onItemTapped,  
@@ -77,12 +77,12 @@ class _MyHomePageState extends State<MyHomePage> {
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person),
-            label: 'Person View',
+            icon: Icon(Icons.network_cell),
+            label: 'Graph',
           ),
           NavigationDestination(
-            icon: Icon(Icons.notifications),
-            label: 'Notification',
+            icon: Icon(Icons.person),
+            label: 'Karte',
           ),
         ],
       ),
