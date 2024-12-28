@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:connect2/screens/person_card_view.dart';
 import 'package:connect2/screens/home_view.dart';
 
-void main() {
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 

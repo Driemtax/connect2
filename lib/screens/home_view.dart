@@ -1,6 +1,6 @@
 import 'package:connect2/exceptions/exceptions.dart';
 import 'package:connect2/screens/person_card_view.dart';
-import 'package:connect2/services/contacts_service.dart';
+import 'package:connect2/provider/contacts_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'dummy_person.dart';
