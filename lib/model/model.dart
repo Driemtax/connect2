@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 part 'model.g.dart';
 
 const tableTag = SqfEntityTable(
-  tableName: 'tag',
+  tableName: 'Tag',
   primaryKeyName: 'id',
   primaryKeyType: PrimaryKeyType.integer_auto_incremental,
   fields: [
@@ -16,7 +16,7 @@ const tableTag = SqfEntityTable(
 );
 
 const tableContactDetail = SqfEntityTable(
-  tableName: 'contact_detail',
+  tableName: 'ContactDetail',
   primaryKeyName: 'id',
   primaryKeyType: PrimaryKeyType.integer_auto_incremental,
   fields: [
@@ -25,7 +25,7 @@ const tableContactDetail = SqfEntityTable(
 );
 
 const tableContactDetailTag = SqfEntityTable(
-  tableName: 'contact_detail_tag',
+  tableName: 'ContactDetailTag',
   primaryKeyName: 'id',
   primaryKeyType: PrimaryKeyType.integer_auto_incremental,
   fields: [
@@ -43,7 +43,7 @@ const tableContactDetailTag = SqfEntityTable(
 );
 
 const tableContactDetailRelation = SqfEntityTable(
-  tableName: 'contact_detail_relation',
+  tableName: 'ContactDetailRelation',
   primaryKeyName: 'id',
   primaryKeyType: PrimaryKeyType.integer_auto_incremental,
   fields: [
