@@ -1,6 +1,6 @@
 import 'package:connect2/exceptions/exceptions.dart';
 import 'package:connect2/screens/person_card_view.dart';
-import 'package:connect2/provider/contacts_service.dart';
+import 'package:connect2/provider/phone_contact_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'dummy_person.dart';
@@ -16,10 +16,11 @@ class HomeContent extends StatefulWidget {
 class HomeContentState extends State<HomeContent> {
   List<Contact> contacts = [];
   bool permissionDenied = false;
+  PhoneContactProvider phoneContactProvider = PhoneContactProvider();
 
   void loadContacts() async {
     try {
-      final fetchedContacts = await getContacts();
+      final fetchedContacts = await phoneContactProvider.getAll();
       setState(() {
         contacts = fetchedContacts;
       });
