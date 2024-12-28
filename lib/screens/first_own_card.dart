@@ -21,22 +21,19 @@ class _OwnContactViewState extends State<OwnContactView> {
   }
 
   Future<void> _loadOwnContact() async {
-    print("\n");
-    print("Reload the view");
     final contact = await getOwnContact();
-    print("I can find the contact: $contact");
     setState(() {
       _ownContact = contact;
     });
   }
 
   void _selectExistingContact() async {
-    final contacts = await getContacts(); // Liste aller Kontakte abrufen
+    final contacts = await getContacts();
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Wähle einen Kontakt'),
+          title: const Text('Wähle einen Kontakt'),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -44,11 +41,11 @@ class _OwnContactViewState extends State<OwnContactView> {
               itemBuilder: (context, index) {
                 final contact = contacts[index];
                 return ListTile(
-                  title: Text(contact.displayName ?? 'Unbekannt'),
+                  title: Text(contact.displayName),
                   onTap: () async {
-                    await saveOwnContactId(contact.id); // Speichere die ID des ausgewählten Kontakts
+                    await saveOwnContactId(contact.id);
                     Navigator.pop(context);
-                    _loadOwnContact(); // Aktualisiere die View
+                    _loadOwnContact();
                   },
                 );
               },
@@ -116,7 +113,7 @@ class _OwnContactViewState extends State<OwnContactView> {
     // If own contact doenst exist, show buttons to select what to do
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Eigener Kontakt'),
+        title: const Text('Eigenen Kontakt auswählen'),
       ),
       body: Center(
         child: Column(

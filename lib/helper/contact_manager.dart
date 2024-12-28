@@ -25,7 +25,6 @@ class ContactManager {
   }
 
   Future<void> _saveContactToDatabase() async {
-    print("Speichere Kontakt in der Datenbank: $contactData");
     // TODO Update database here
     Contact updatedContact = Contact();
     updatedContact.id = contactId.toString();

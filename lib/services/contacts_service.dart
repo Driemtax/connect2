@@ -97,12 +97,13 @@ Future<void> saveOwnContactId(String contactId) async {
   await prefs.setString('own_contact_id', contactId);
 }
 
+/// Gets the Id of the users own contact if one exists. Otherwise returns null
 Future<String?> getOwnContactId() async {
   final prefs = await SharedPreferences.getInstance();
   return prefs.getString('own_contact_id');
 }
 
-
+/// Gets the contact object of the users own contact if one exists.
 Future<Contact?> getOwnContact() async {
   final contactId = await getOwnContactId();
   if (contactId != null) {

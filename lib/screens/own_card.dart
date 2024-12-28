@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:connect2/main.dart';
 
 class OwnCardView extends StatefulWidget {
   final int contactId;
@@ -18,6 +17,8 @@ class _OwnCardViewState extends State<OwnCardView> {
   late int contactId;
   late ContactManager _contactManager;
   bool _isLoading = true;
+  late TextEditingController _residenceController;
+  late TextEditingController _employerController;
   // General Information
   String _name = "";
   DateTime? _birthDate;
@@ -39,6 +40,13 @@ class _OwnCardViewState extends State<OwnCardView> {
     
   }
 
+  @override
+  void dispose() {
+    _residenceController.dispose();
+    _employerController.dispose();
+    super.dispose();
+  }
+
   Future<void> _initializeData() async {
     await _contactManager.loadContactFromDatabase();
     setState(() {
@@ -46,6 +54,10 @@ class _OwnCardViewState extends State<OwnCardView> {
       _birthDate = _contactManager.contactData["birthDate"];
       _residence = _contactManager.contactData["residence"] ?? "";
       _employer = _contactManager.contactData["employer"] ?? "";
+      
+      // Set controller
+      _residenceController = TextEditingController(text: _residence);
+      _employerController = TextEditingController(text: _employer);
 
       // Skills
       _skills.clear();
@@ -468,6 +480,17 @@ class _OwnCardViewState extends State<OwnCardView> {
         ],
       );
     }
+
+    TextEditingController controller;
+    if (label == 'Wohnort') {
+      controller = _residenceController;
+    }
+    else if (label == 'Arbeitgeber / Uni'){
+      controller = _employerController;
+    }
+    else {
+      controller = TextEditingController(text: value); // Fallback
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -480,7 +503,7 @@ class _OwnCardViewState extends State<OwnCardView> {
         ),
         const SizedBox(height: 4),
         TextField(
-          controller: TextEditingController(text: value),
+          controller: controller,
           onChanged: (newValue) {
             setState(() {
               if (label == 'Wohnort') {

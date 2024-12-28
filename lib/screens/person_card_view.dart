@@ -19,7 +19,9 @@ class _PersonCardViewState extends State<PersonCardView> {
   late int contactId;
   late ContactManager _contactManager;
   bool _isLoading = true;
-  // General Information
+  late TextEditingController _residenceController;
+  late TextEditingController _employerController;
+
   String _name = "";
   DateTime? _birthDate;
   String _residence = "";
@@ -42,6 +44,13 @@ class _PersonCardViewState extends State<PersonCardView> {
     
   }
 
+  @override
+  void dispose() {
+    _residenceController.dispose();
+    _employerController.dispose();
+    super.dispose();
+  }
+
   Future<void> _initializeData() async {
     await _contactManager.loadContactFromDatabase();
     setState(() {
@@ -49,6 +58,10 @@ class _PersonCardViewState extends State<PersonCardView> {
       _birthDate = _contactManager.contactData["birthDate"];
       _residence = _contactManager.contactData["residence"] ?? "";
       _employer = _contactManager.contactData["employer"] ?? "";
+
+      // Controller
+      _residenceController = TextEditingController(text: _residence);
+      _employerController = TextEditingController(text: _employer);
 
       // Notes
       _noteList.clear();
@@ -84,15 +97,6 @@ class _PersonCardViewState extends State<PersonCardView> {
         _contactManager.updateContactField('birthDate', pickedDate.toIso8601String());
       });
     }
-  }
-
-  void updatePersonalInfo(String name, DateTime birthDate, String residence, String employer) {
-    setState(() {
-      _name = name;
-      _birthDate = birthDate;
-      _residence = residence;
-      _employer = employer;
-    });
   }
 
   void _addNote(String newText) {
@@ -586,6 +590,17 @@ class _PersonCardViewState extends State<PersonCardView> {
         ],
       );
     }
+
+    TextEditingController controller;
+    if (label == 'Wohnort') {
+      controller = _residenceController;
+    }
+    else if (label == 'Arbeitgeber / Uni'){
+      controller = _employerController;
+    }
+    else {
+      controller = TextEditingController(text: value); // Fallback
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -598,7 +613,7 @@ class _PersonCardViewState extends State<PersonCardView> {
         ),
         const SizedBox(height: 4),
         TextField(
-          controller: TextEditingController(text: value),
+          controller: controller,
           onChanged: (newValue) {
             setState(() {
               if (label == 'Wohnort') {
