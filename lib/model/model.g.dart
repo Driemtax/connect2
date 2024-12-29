@@ -55,7 +55,7 @@ class TableContactDetail extends SqfEntityTableBase {
 
     // declare fields
     fields = [
-      SqfEntityFieldBase('contactId', DbType.text),
+      SqfEntityFieldBase('phoneContactId', DbType.text),
     ];
     super.init();
   }
@@ -70,54 +70,28 @@ class TableContactDetailTag extends SqfEntityTableBase {
   TableContactDetailTag() {
     // declare properties of EntityTable
     tableName = 'ContactDetailTag';
-    primaryKeyName = 'id';
-    primaryKeyType = PrimaryKeyType.integer_auto_incremental;
+    relationType = RelationType.MANY_TO_MANY;
+    primaryKeyName = '';
     useSoftDeleting = false;
     // when useSoftDeleting is true, creates a field named 'isDeleted' on the table, and set to '1' this field when item deleted (does not hard delete)
 
     // declare fields
     fields = [
+      SqfEntityFieldRelationshipBase(TableTag.getInstance, DeleteRule.NO_ACTION,
+          relationType: RelationType.ONE_TO_MANY,
+          fieldName: 'TagId',
+          isPrimaryKeyField: true),
       SqfEntityFieldRelationshipBase(
-          TableContactDetail.getInstance, DeleteRule.CASCADE,
-          relationType: RelationType.ONE_TO_MANY, fieldName: 'contactDetailId'),
-      SqfEntityFieldRelationshipBase(TableTag.getInstance, DeleteRule.CASCADE,
-          relationType: RelationType.ONE_TO_MANY, fieldName: 'tagId'),
+          TableContactDetail.getInstance, DeleteRule.NO_ACTION,
+          relationType: RelationType.ONE_TO_MANY,
+          fieldName: 'ContactDetailId',
+          isPrimaryKeyField: true),
     ];
     super.init();
   }
   static SqfEntityTableBase? _instance;
   static SqfEntityTableBase get getInstance {
     return _instance = _instance ?? TableContactDetailTag();
-  }
-}
-
-// ContactDetailRelation TABLE
-class TableContactDetailRelation extends SqfEntityTableBase {
-  TableContactDetailRelation() {
-    // declare properties of EntityTable
-    tableName = 'ContactDetailRelation';
-    primaryKeyName = 'id';
-    primaryKeyType = PrimaryKeyType.integer_auto_incremental;
-    useSoftDeleting = false;
-    // when useSoftDeleting is true, creates a field named 'isDeleted' on the table, and set to '1' this field when item deleted (does not hard delete)
-
-    // declare fields
-    fields = [
-      SqfEntityFieldBase('relationName', DbType.text),
-      SqfEntityFieldRelationshipBase(
-          TableContactDetail.getInstance, DeleteRule.CASCADE,
-          relationType: RelationType.ONE_TO_MANY,
-          fieldName: 'contactDetailId1'),
-      SqfEntityFieldRelationshipBase(
-          TableContactDetail.getInstance, DeleteRule.CASCADE,
-          relationType: RelationType.ONE_TO_MANY,
-          fieldName: 'contactDetailId2'),
-    ];
-    super.init();
-  }
-  static SqfEntityTableBase? _instance;
-  static SqfEntityTableBase get getInstance {
-    return _instance = _instance ?? TableContactDetailRelation();
   }
 }
 // END TABLES
@@ -137,7 +111,6 @@ class Connect2DB extends SqfEntityModelProvider {
       TableTag.getInstance,
       TableContactDetail.getInstance,
       TableContactDetailTag.getInstance,
-      TableContactDetailRelation.getInstance,
     ];
 
     bundledDatabasePath = connect2DatabaseModel
@@ -182,20 +155,18 @@ class Tag extends TableBase {
   // end FIELDS (Tag)
 
 // COLLECTIONS & VIRTUALS (Tag)
-  /// to load children of items to this field, use preload parameter. Ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
-  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plContactDetailTags', 'plField2'..]) or so on..
-  List<ContactDetailTag>? plContactDetailTags;
+  ///(RelationType.MANY_TO_MANY) (ContactDetailTag) to load children of items to this field, use preload parameter. Ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
+  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plContactDetails', 'plField2'..]) or so on..
+  List<ContactDetail>? plContactDetails;
 
-  /// get ContactDetailTag(s) filtered by id=tagId
-  ContactDetailTagFilterBuilder? getContactDetailTags(
+  /// get ContactDetail(s) filtered by ContactDetailId IN ContactDetailTag
+  ContactDetailFilterBuilder? getContactDetails(
       {List<String>? columnsToSelect, bool? getIsDeleted}) {
-    if (id == null) {
-      return null;
-    }
-    return ContactDetailTag()
+    return ContactDetail()
         .select(columnsToSelect: columnsToSelect, getIsDeleted: getIsDeleted)
-        .tagId
-        .equals(id)
+        .where(
+            'id IN (SELECT ContactDetailId FROM ContactDetailTag WHERE TagId=?)',
+            parameterValue: id)
         .and;
   }
 
@@ -234,7 +205,7 @@ class Tag extends TableBase {
 
 // COLLECTIONS (Tag)
     if (!forQuery) {
-      map['ContactDetailTags'] = await getContactDetailTags()!.toMapList();
+      map['ContactDetails'] = await getContactDetails()!.toMapList();
     }
 // END COLLECTIONS (Tag)
 
@@ -307,13 +278,13 @@ class Tag extends TableBase {
       // RELATIONSHIPS PRELOAD CHILD
       if (preload) {
         loadedFields = loadedFields ?? [];
-        if (/*!_loadedfields!.contains('Tag.plContactDetailTags') && */ (preloadFields ==
+        if (/*!_loadedfields!.contains('Tag.plContactDetails') && */ (preloadFields ==
                 null ||
-            preloadFields.contains('plContactDetailTags'))) {
-          /*_loadedfields!.add('Tag.plContactDetailTags'); */ obj
-                  .plContactDetailTags =
-              obj.plContactDetailTags ??
-                  await obj.getContactDetailTags()!.toList(
+            preloadFields.contains('plContactDetails'))) {
+          /*_loadedfields!.add('Tag.plContactDetails'); */ obj
+                  .plContactDetails =
+              obj.plContactDetails ??
+                  await obj.getContactDetails()!.toList(
                       preload: preload,
                       preloadFields: preloadFields,
                       loadParents: false /*, loadedFields:_loadedFields*/);
@@ -350,13 +321,13 @@ class Tag extends TableBase {
       // RELATIONSHIPS PRELOAD CHILD
       if (preload) {
         loadedFields = loadedFields ?? [];
-        if (/*!_loadedfields!.contains('Tag.plContactDetailTags') && */ (preloadFields ==
+        if (/*!_loadedfields!.contains('Tag.plContactDetails') && */ (preloadFields ==
                 null ||
-            preloadFields.contains('plContactDetailTags'))) {
-          /*_loadedfields!.add('Tag.plContactDetailTags'); */ obj
-                  .plContactDetailTags =
-              obj.plContactDetailTags ??
-                  await obj.getContactDetailTags()!.toList(
+            preloadFields.contains('plContactDetails'))) {
+          /*_loadedfields!.add('Tag.plContactDetails'); */ obj
+                  .plContactDetails =
+              obj.plContactDetails ??
+                  await obj.getContactDetails()!.toList(
                       preload: preload,
                       preloadFields: preloadFields,
                       loadParents: false /*, loadedFields:_loadedFields*/);
@@ -478,18 +449,6 @@ class Tag extends TableBase {
   @override
   Future<BoolResult> delete([bool hardDelete = false]) async {
     debugPrint('SQFENTITIY: delete Tag invoked (id=$id)');
-    var result = BoolResult(success: false);
-    {
-      result = await ContactDetailTag()
-          .select()
-          .tagId
-          .equals(id)
-          .and
-          .delete(hardDelete);
-    }
-    if (!result.success) {
-      return result;
-    }
     if (!_softDeleteActivated || hardDelete) {
       return _mnTag
           .delete(QueryParams(whereString: 'id=?', whereArguments: [id]));
@@ -744,16 +703,6 @@ class TagFilterBuilder extends ConjunctionBase {
   Future<BoolResult> delete([bool hardDelete = false]) async {
     buildParameters();
     var r = BoolResult(success: false);
-    // Delete sub records where in (ContactDetailTag) according to DeleteRule.CASCADE
-    final idListContactDetailTagBYtagId = toListPrimaryKeySQL(false);
-    final resContactDetailTagBYtagId = await ContactDetailTag()
-        .select()
-        .where('tagId IN (${idListContactDetailTagBYtagId['sql']})',
-            parameterValue: idListContactDetailTagBYtagId['args'])
-        .delete(hardDelete);
-    if (!resContactDetailTagBYtagId.success) {
-      return resContactDetailTagBYtagId;
-    }
 
     if (_softDeleteActivated && !hardDelete) {
       r = await _mnTag!.updateBatch(qparams, {'isDeleted': 1});
@@ -800,13 +749,13 @@ class TagFilterBuilder extends ConjunctionBase {
       // RELATIONSHIPS PRELOAD CHILD
       if (preload) {
         loadedFields = loadedFields ?? [];
-        if (/*!_loadedfields!.contains('Tag.plContactDetailTags') && */ (preloadFields ==
+        if (/*!_loadedfields!.contains('Tag.plContactDetails') && */ (preloadFields ==
                 null ||
-            preloadFields.contains('plContactDetailTags'))) {
-          /*_loadedfields!.add('Tag.plContactDetailTags'); */ obj
-                  .plContactDetailTags =
-              obj.plContactDetailTags ??
-                  await obj.getContactDetailTags()!.toList(
+            preloadFields.contains('plContactDetails'))) {
+          /*_loadedfields!.add('Tag.plContactDetails'); */ obj
+                  .plContactDetails =
+              obj.plContactDetails ??
+                  await obj.getContactDetails()!.toList(
                       preload: preload,
                       preloadFields: preloadFields,
                       loadParents: false /*, loadedFields:_loadedFields*/);
@@ -1009,14 +958,14 @@ class TagManager extends SqfEntityProvider {
 //endregion TagManager
 // region ContactDetail
 class ContactDetail extends TableBase {
-  ContactDetail({this.id, this.contactId}) {
+  ContactDetail({this.id, this.phoneContactId}) {
     _setDefaultValues();
     softDeleteActivated = false;
   }
-  ContactDetail.withFields(this.contactId) {
+  ContactDetail.withFields(this.phoneContactId) {
     _setDefaultValues();
   }
-  ContactDetail.withId(this.id, this.contactId) {
+  ContactDetail.withId(this.id, this.phoneContactId) {
     _setDefaultValues();
   }
   // fromMap v2.0
@@ -1026,66 +975,29 @@ class ContactDetail extends TableBase {
       _setDefaultValues();
     }
     id = int.tryParse(o['id'].toString());
-    if (o['contactId'] != null) {
-      contactId = o['contactId'].toString();
+    if (o['phoneContactId'] != null) {
+      phoneContactId = o['phoneContactId'].toString();
     }
   }
   // FIELDS (ContactDetail)
   int? id;
-  String? contactId;
+  String? phoneContactId;
 
   // end FIELDS (ContactDetail)
 
 // COLLECTIONS & VIRTUALS (ContactDetail)
-  /// to load children of items to this field, use preload parameter. Ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
-  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plContactDetailTags', 'plField2'..]) or so on..
-  List<ContactDetailTag>? plContactDetailTags;
+  ///(RelationType.MANY_TO_MANY) (ContactDetailTag) to load children of items to this field, use preload parameter. Ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
+  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plTags', 'plField2'..]) or so on..
+  List<Tag>? plTags;
 
-  /// get ContactDetailTag(s) filtered by id=contactDetailId
-  ContactDetailTagFilterBuilder? getContactDetailTags(
+  /// get Tag(s) filtered by TagId IN ContactDetailTag
+  TagFilterBuilder? getTags(
       {List<String>? columnsToSelect, bool? getIsDeleted}) {
-    if (id == null) {
-      return null;
-    }
-    return ContactDetailTag()
+    return Tag()
         .select(columnsToSelect: columnsToSelect, getIsDeleted: getIsDeleted)
-        .contactDetailId
-        .equals(id)
-        .and;
-  }
-
-  /// to load children of items to this field, use preload parameter. Ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
-  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plContactDetailRelations', 'plField2'..]) or so on..
-  List<ContactDetailRelation>? plContactDetailRelations;
-
-  /// get ContactDetailRelation(s) filtered by id=contactDetailId1
-  ContactDetailRelationFilterBuilder? getContactDetailRelations(
-      {List<String>? columnsToSelect, bool? getIsDeleted}) {
-    if (id == null) {
-      return null;
-    }
-    return ContactDetailRelation()
-        .select(columnsToSelect: columnsToSelect, getIsDeleted: getIsDeleted)
-        .contactDetailId1
-        .equals(id)
-        .and;
-  }
-
-  /// to load children of items to this field, use preload parameter. Ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
-  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plContactDetailRelationsBycontactDetailId2', 'plField2'..]) or so on..
-  List<ContactDetailRelation>? plContactDetailRelationsBycontactDetailId2;
-
-  /// get ContactDetailRelation(s) filtered by id=contactDetailId2
-  ContactDetailRelationFilterBuilder?
-      getContactDetailRelationsBycontactDetailId2(
-          {List<String>? columnsToSelect, bool? getIsDeleted}) {
-    if (id == null) {
-      return null;
-    }
-    return ContactDetailRelation()
-        .select(columnsToSelect: columnsToSelect, getIsDeleted: getIsDeleted)
-        .contactDetailId2
-        .equals(id)
+        .where(
+            'id IN (SELECT TagId FROM ContactDetailTag WHERE ContactDetailId=?)',
+            parameterValue: id)
         .and;
   }
 
@@ -1104,8 +1016,8 @@ class ContactDetail extends TableBase {
       {bool forQuery = false, bool forJson = false, bool forView = false}) {
     final map = <String, dynamic>{};
     map['id'] = id;
-    if (contactId != null || !forView) {
-      map['contactId'] = contactId;
+    if (phoneContactId != null || !forView) {
+      map['phoneContactId'] = phoneContactId;
     }
 
     return map;
@@ -1118,21 +1030,13 @@ class ContactDetail extends TableBase {
       bool forView = false]) async {
     final map = <String, dynamic>{};
     map['id'] = id;
-    if (contactId != null || !forView) {
-      map['contactId'] = contactId;
+    if (phoneContactId != null || !forView) {
+      map['phoneContactId'] = phoneContactId;
     }
 
 // COLLECTIONS (ContactDetail)
     if (!forQuery) {
-      map['ContactDetailTags'] = await getContactDetailTags()!.toMapList();
-    }
-    if (!forQuery) {
-      map['ContactDetailRelations'] =
-          await getContactDetailRelations()!.toMapList();
-    }
-    if (!forQuery) {
-      map['ContactDetailRelations'] =
-          await getContactDetailRelations()!.toMapList();
+      map['Tags'] = await getTags()!.toMapList();
     }
 // END COLLECTIONS (ContactDetail)
 
@@ -1153,12 +1057,12 @@ class ContactDetail extends TableBase {
 
   @override
   List<dynamic> toArgs() {
-    return [contactId];
+    return [phoneContactId];
   }
 
   @override
   List<dynamic> toArgsWithIds() {
-    return [id, contactId];
+    return [id, phoneContactId];
   }
 
   static Future<List<ContactDetail>?> fromWebUrl(Uri uri,
@@ -1208,39 +1112,15 @@ class ContactDetail extends TableBase {
       // RELATIONSHIPS PRELOAD CHILD
       if (preload) {
         loadedFields = loadedFields ?? [];
-        if (/*!_loadedfields!.contains('ContactDetail.plContactDetailTags') && */ (preloadFields ==
+        if (/*!_loadedfields!.contains('ContactDetail.plTags') && */ (preloadFields ==
                 null ||
-            preloadFields.contains('plContactDetailTags'))) {
-          /*_loadedfields!.add('ContactDetail.plContactDetailTags'); */ obj
-                  .plContactDetailTags =
-              obj.plContactDetailTags ??
-                  await obj.getContactDetailTags()!.toList(
+            preloadFields.contains('plTags'))) {
+          /*_loadedfields!.add('ContactDetail.plTags'); */ obj.plTags =
+              obj.plTags ??
+                  await obj.getTags()!.toList(
                       preload: preload,
                       preloadFields: preloadFields,
                       loadParents: false /*, loadedFields:_loadedFields*/);
-        }
-        if (/*!_loadedfields!.contains('ContactDetail.plContactDetailRelations') && */ (preloadFields ==
-                null ||
-            preloadFields.contains('plContactDetailRelations'))) {
-          /*_loadedfields!.add('ContactDetail.plContactDetailRelations'); */ obj
-                  .plContactDetailRelations =
-              obj.plContactDetailRelations ??
-                  await obj.getContactDetailRelations()!.toList(
-                      preload: preload,
-                      preloadFields: preloadFields,
-                      loadParents: false /*, loadedFields:_loadedFields*/);
-        }
-        if (/*!_loadedfields!.contains('ContactDetail.plContactDetailRelationsBycontactDetailId2') && */ (preloadFields ==
-                null ||
-            preloadFields
-                .contains('plContactDetailRelationsBycontactDetailId2'))) {
-          /*_loadedfields!.add('ContactDetail.plContactDetailRelationsBycontactDetailId2'); */ obj
-              .plContactDetailRelationsBycontactDetailId2 = obj
-                  .plContactDetailRelationsBycontactDetailId2 ??
-              await obj.getContactDetailRelationsBycontactDetailId2()!.toList(
-                  preload: preload,
-                  preloadFields: preloadFields,
-                  loadParents: false /*, loadedFields:_loadedFields*/);
         }
       } // END RELATIONSHIPS PRELOAD CHILD
 
@@ -1274,39 +1154,15 @@ class ContactDetail extends TableBase {
       // RELATIONSHIPS PRELOAD CHILD
       if (preload) {
         loadedFields = loadedFields ?? [];
-        if (/*!_loadedfields!.contains('ContactDetail.plContactDetailTags') && */ (preloadFields ==
+        if (/*!_loadedfields!.contains('ContactDetail.plTags') && */ (preloadFields ==
                 null ||
-            preloadFields.contains('plContactDetailTags'))) {
-          /*_loadedfields!.add('ContactDetail.plContactDetailTags'); */ obj
-                  .plContactDetailTags =
-              obj.plContactDetailTags ??
-                  await obj.getContactDetailTags()!.toList(
+            preloadFields.contains('plTags'))) {
+          /*_loadedfields!.add('ContactDetail.plTags'); */ obj.plTags =
+              obj.plTags ??
+                  await obj.getTags()!.toList(
                       preload: preload,
                       preloadFields: preloadFields,
                       loadParents: false /*, loadedFields:_loadedFields*/);
-        }
-        if (/*!_loadedfields!.contains('ContactDetail.plContactDetailRelations') && */ (preloadFields ==
-                null ||
-            preloadFields.contains('plContactDetailRelations'))) {
-          /*_loadedfields!.add('ContactDetail.plContactDetailRelations'); */ obj
-                  .plContactDetailRelations =
-              obj.plContactDetailRelations ??
-                  await obj.getContactDetailRelations()!.toList(
-                      preload: preload,
-                      preloadFields: preloadFields,
-                      loadParents: false /*, loadedFields:_loadedFields*/);
-        }
-        if (/*!_loadedfields!.contains('ContactDetail.plContactDetailRelationsBycontactDetailId2') && */ (preloadFields ==
-                null ||
-            preloadFields
-                .contains('plContactDetailRelationsBycontactDetailId2'))) {
-          /*_loadedfields!.add('ContactDetail.plContactDetailRelationsBycontactDetailId2'); */ obj
-              .plContactDetailRelationsBycontactDetailId2 = obj
-                  .plContactDetailRelationsBycontactDetailId2 ??
-              await obj.getContactDetailRelationsBycontactDetailId2()!.toList(
-                  preload: preload,
-                  preloadFields: preloadFields,
-                  loadParents: false /*, loadedFields:_loadedFields*/);
         }
       } // END RELATIONSHIPS PRELOAD CHILD
     } else {
@@ -1386,8 +1242,8 @@ class ContactDetail extends TableBase {
   Future<int?> upsert({bool ignoreBatch = true}) async {
     try {
       final result = await _mnContactDetail.rawInsert(
-          'INSERT OR REPLACE INTO ContactDetail (id, contactId)  VALUES (?,?)',
-          [id, contactId],
+          'INSERT OR REPLACE INTO ContactDetail (id, phoneContactId)  VALUES (?,?)',
+          [id, phoneContactId],
           ignoreBatch);
       if (result! > 0) {
         saveResult = BoolResult(
@@ -1414,7 +1270,7 @@ class ContactDetail extends TableBase {
   Future<BoolCommitResult> upsertAll(List<ContactDetail> contactdetails,
       {bool? exclusive, bool? noResult, bool? continueOnError}) async {
     final results = await _mnContactDetail.rawInsertAll(
-        'INSERT OR REPLACE INTO ContactDetail (id, contactId)  VALUES (?,?)',
+        'INSERT OR REPLACE INTO ContactDetail (id, phoneContactId)  VALUES (?,?)',
         contactdetails,
         exclusive: exclusive,
         noResult: noResult,
@@ -1428,40 +1284,6 @@ class ContactDetail extends TableBase {
   @override
   Future<BoolResult> delete([bool hardDelete = false]) async {
     debugPrint('SQFENTITIY: delete ContactDetail invoked (id=$id)');
-    var result = BoolResult(success: false);
-    {
-      result = await ContactDetailTag()
-          .select()
-          .contactDetailId
-          .equals(id)
-          .and
-          .delete(hardDelete);
-    }
-    if (!result.success) {
-      return result;
-    }
-    {
-      result = await ContactDetailRelation()
-          .select()
-          .contactDetailId1
-          .equals(id)
-          .and
-          .delete(hardDelete);
-    }
-    if (!result.success) {
-      return result;
-    }
-    {
-      result = await ContactDetailRelation()
-          .select()
-          .contactDetailId2
-          .equals(id)
-          .and
-          .delete(hardDelete);
-    }
-    if (!result.success) {
-      return result;
-    }
     if (!_softDeleteActivated || hardDelete) {
       return _mnContactDetail
           .delete(QueryParams(whereString: 'id=?', whereArguments: [id]));
@@ -1709,9 +1531,10 @@ class ContactDetailFilterBuilder extends ConjunctionBase {
     return _id = _setField(_id, 'id', DbType.integer);
   }
 
-  ContactDetailField? _contactId;
-  ContactDetailField get contactId {
-    return _contactId = _setField(_contactId, 'contactId', DbType.text);
+  ContactDetailField? _phoneContactId;
+  ContactDetailField get phoneContactId {
+    return _phoneContactId =
+        _setField(_phoneContactId, 'phoneContactId', DbType.text);
   }
 
   /// Deletes List<ContactDetail> bulk by query
@@ -1721,43 +1544,6 @@ class ContactDetailFilterBuilder extends ConjunctionBase {
   Future<BoolResult> delete([bool hardDelete = false]) async {
     buildParameters();
     var r = BoolResult(success: false);
-    // Delete sub records where in (ContactDetailTag) according to DeleteRule.CASCADE
-    final idListContactDetailTagBYcontactDetailId = toListPrimaryKeySQL(false);
-    final resContactDetailTagBYcontactDetailId = await ContactDetailTag()
-        .select()
-        .where(
-            'contactDetailId IN (${idListContactDetailTagBYcontactDetailId['sql']})',
-            parameterValue: idListContactDetailTagBYcontactDetailId['args'])
-        .delete(hardDelete);
-    if (!resContactDetailTagBYcontactDetailId.success) {
-      return resContactDetailTagBYcontactDetailId;
-    }
-// Delete sub records where in (ContactDetailRelation) according to DeleteRule.CASCADE
-    final idListContactDetailRelationBYcontactDetailId1 =
-        toListPrimaryKeySQL(false);
-    final resContactDetailRelationBYcontactDetailId1 = await ContactDetailRelation()
-        .select()
-        .where(
-            'contactDetailId1 IN (${idListContactDetailRelationBYcontactDetailId1['sql']})',
-            parameterValue:
-                idListContactDetailRelationBYcontactDetailId1['args'])
-        .delete(hardDelete);
-    if (!resContactDetailRelationBYcontactDetailId1.success) {
-      return resContactDetailRelationBYcontactDetailId1;
-    }
-// Delete sub records where in (ContactDetailRelation) according to DeleteRule.CASCADE
-    final idListContactDetailRelationBYcontactDetailId2 =
-        toListPrimaryKeySQL(false);
-    final resContactDetailRelationBYcontactDetailId2 = await ContactDetailRelation()
-        .select()
-        .where(
-            'contactDetailId2 IN (${idListContactDetailRelationBYcontactDetailId2['sql']})',
-            parameterValue:
-                idListContactDetailRelationBYcontactDetailId2['args'])
-        .delete(hardDelete);
-    if (!resContactDetailRelationBYcontactDetailId2.success) {
-      return resContactDetailRelationBYcontactDetailId2;
-    }
 
     if (_softDeleteActivated && !hardDelete) {
       r = await _mnContactDetail!.updateBatch(qparams, {'isDeleted': 1});
@@ -1804,39 +1590,15 @@ class ContactDetailFilterBuilder extends ConjunctionBase {
       // RELATIONSHIPS PRELOAD CHILD
       if (preload) {
         loadedFields = loadedFields ?? [];
-        if (/*!_loadedfields!.contains('ContactDetail.plContactDetailTags') && */ (preloadFields ==
+        if (/*!_loadedfields!.contains('ContactDetail.plTags') && */ (preloadFields ==
                 null ||
-            preloadFields.contains('plContactDetailTags'))) {
-          /*_loadedfields!.add('ContactDetail.plContactDetailTags'); */ obj
-                  .plContactDetailTags =
-              obj.plContactDetailTags ??
-                  await obj.getContactDetailTags()!.toList(
+            preloadFields.contains('plTags'))) {
+          /*_loadedfields!.add('ContactDetail.plTags'); */ obj.plTags =
+              obj.plTags ??
+                  await obj.getTags()!.toList(
                       preload: preload,
                       preloadFields: preloadFields,
                       loadParents: false /*, loadedFields:_loadedFields*/);
-        }
-        if (/*!_loadedfields!.contains('ContactDetail.plContactDetailRelations') && */ (preloadFields ==
-                null ||
-            preloadFields.contains('plContactDetailRelations'))) {
-          /*_loadedfields!.add('ContactDetail.plContactDetailRelations'); */ obj
-                  .plContactDetailRelations =
-              obj.plContactDetailRelations ??
-                  await obj.getContactDetailRelations()!.toList(
-                      preload: preload,
-                      preloadFields: preloadFields,
-                      loadParents: false /*, loadedFields:_loadedFields*/);
-        }
-        if (/*!_loadedfields!.contains('ContactDetail.plContactDetailRelationsBycontactDetailId2') && */ (preloadFields ==
-                null ||
-            preloadFields
-                .contains('plContactDetailRelationsBycontactDetailId2'))) {
-          /*_loadedfields!.add('ContactDetail.plContactDetailRelationsBycontactDetailId2'); */ obj
-              .plContactDetailRelationsBycontactDetailId2 = obj
-                  .plContactDetailRelationsBycontactDetailId2 ??
-              await obj.getContactDetailRelationsBycontactDetailId2()!.toList(
-                  preload: preload,
-                  preloadFields: preloadFields,
-                  loadParents: false /*, loadedFields:_loadedFields*/);
         }
       } // END RELATIONSHIPS PRELOAD CHILD
     } else {
@@ -2017,10 +1779,10 @@ class ContactDetailFields {
     return _fId = _fId ?? SqlSyntax.setField(_fId, 'id', DbType.integer);
   }
 
-  static TableField? _fContactId;
-  static TableField get contactId {
-    return _fContactId = _fContactId ??
-        SqlSyntax.setField(_fContactId, 'contactId', DbType.text);
+  static TableField? _fPhoneContactId;
+  static TableField get phoneContactId {
+    return _fPhoneContactId = _fPhoneContactId ??
+        SqlSyntax.setField(_fPhoneContactId, 'phoneContactId', DbType.text);
   }
 }
 // endregion ContactDetailFields
@@ -2040,14 +1802,14 @@ class ContactDetailManager extends SqfEntityProvider {
 //endregion ContactDetailManager
 // region ContactDetailTag
 class ContactDetailTag extends TableBase {
-  ContactDetailTag({this.id, this.contactDetailId, this.tagId}) {
+  ContactDetailTag({this.TagId, this.ContactDetailId}) {
     _setDefaultValues();
     softDeleteActivated = false;
   }
-  ContactDetailTag.withFields(this.contactDetailId, this.tagId) {
+  ContactDetailTag.withFields(this.TagId, this.ContactDetailId) {
     _setDefaultValues();
   }
-  ContactDetailTag.withId(this.id, this.contactDetailId, this.tagId) {
+  ContactDetailTag.withId(this.TagId, this.ContactDetailId) {
     _setDefaultValues();
   }
   // fromMap v2.0
@@ -2056,39 +1818,27 @@ class ContactDetailTag extends TableBase {
     if (setDefaultValues) {
       _setDefaultValues();
     }
-    id = int.tryParse(o['id'].toString());
-    contactDetailId = int.tryParse(o['contactDetailId'].toString());
+    TagId = int.tryParse(o['TagId'].toString());
 
-    tagId = int.tryParse(o['tagId'].toString());
+    ContactDetailId = int.tryParse(o['ContactDetailId'].toString());
 
     // RELATIONSHIPS FromMAP
+    plTag =
+        o['tag'] != null ? Tag.fromMap(o['tag'] as Map<String, dynamic>) : null;
     plContactDetail = o['contactDetail'] != null
         ? ContactDetail.fromMap(o['contactDetail'] as Map<String, dynamic>)
         : null;
-    plTag =
-        o['tag'] != null ? Tag.fromMap(o['tag'] as Map<String, dynamic>) : null;
     // END RELATIONSHIPS FromMAP
+
+    isSaved = true;
   }
   // FIELDS (ContactDetailTag)
-  int? id;
-  int? contactDetailId;
-  int? tagId;
-
+  int? TagId;
+  int? ContactDetailId;
+  bool? isSaved;
   // end FIELDS (ContactDetailTag)
 
 // RELATIONSHIPS (ContactDetailTag)
-  /// to load parent of items to this field, use preload parameter ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
-  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plContactDetail', 'plField2'..]) or so on..
-  ContactDetail? plContactDetail;
-
-  /// get ContactDetail By ContactDetailId
-  Future<ContactDetail?> getContactDetail(
-      {bool loadParents = false, List<String>? loadedFields}) async {
-    final _obj = await ContactDetail().getById(contactDetailId,
-        loadParents: loadParents, loadedFields: loadedFields);
-    return _obj;
-  }
-
   /// to load parent of items to this field, use preload parameter ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
   /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plTag', 'plField2'..]) or so on..
   Tag? plTag;
@@ -2097,7 +1847,19 @@ class ContactDetailTag extends TableBase {
   Future<Tag?> getTag(
       {bool loadParents = false, List<String>? loadedFields}) async {
     final _obj = await Tag()
-        .getById(tagId, loadParents: loadParents, loadedFields: loadedFields);
+        .getById(TagId, loadParents: loadParents, loadedFields: loadedFields);
+    return _obj;
+  }
+
+  /// to load parent of items to this field, use preload parameter ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
+  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plContactDetail', 'plField2'..]) or so on..
+  ContactDetail? plContactDetail;
+
+  /// get ContactDetail By ContactDetailId
+  Future<ContactDetail?> getContactDetail(
+      {bool loadParents = false, List<String>? loadedFields}) async {
+    final _obj = await ContactDetail().getById(ContactDetailId,
+        loadParents: loadParents, loadedFields: loadedFields);
     return _obj;
   }
   // END RELATIONSHIPS (ContactDetailTag)
@@ -2115,24 +1877,23 @@ class ContactDetailTag extends TableBase {
   Map<String, dynamic> toMap(
       {bool forQuery = false, bool forJson = false, bool forView = false}) {
     final map = <String, dynamic>{};
-    map['id'] = id;
-    if (contactDetailId != null) {
-      map['contactDetailId'] = forView
-          ? plContactDetail == null
-              ? contactDetailId
-              : plContactDetail!.contactId
-          : contactDetailId;
-    } else if (contactDetailId != null || !forView) {
-      map['contactDetailId'] = null;
-    }
-    if (tagId != null) {
-      map['tagId'] = forView
+    if (TagId != null) {
+      map['TagId'] = forView
           ? plTag == null
-              ? tagId
+              ? TagId
               : plTag!.name
-          : tagId;
-    } else if (tagId != null || !forView) {
-      map['tagId'] = null;
+          : TagId;
+    } else if (TagId != null || !forView) {
+      map['TagId'] = null;
+    }
+    if (ContactDetailId != null) {
+      map['ContactDetailId'] = forView
+          ? plContactDetail == null
+              ? ContactDetailId
+              : plContactDetail!.phoneContactId
+          : ContactDetailId;
+    } else if (ContactDetailId != null || !forView) {
+      map['ContactDetailId'] = null;
     }
 
     return map;
@@ -2144,24 +1905,23 @@ class ContactDetailTag extends TableBase {
       bool forJson = false,
       bool forView = false]) async {
     final map = <String, dynamic>{};
-    map['id'] = id;
-    if (contactDetailId != null) {
-      map['contactDetailId'] = forView
-          ? plContactDetail == null
-              ? contactDetailId
-              : plContactDetail!.contactId
-          : contactDetailId;
-    } else if (contactDetailId != null || !forView) {
-      map['contactDetailId'] = null;
-    }
-    if (tagId != null) {
-      map['tagId'] = forView
+    if (TagId != null) {
+      map['TagId'] = forView
           ? plTag == null
-              ? tagId
+              ? TagId
               : plTag!.name
-          : tagId;
-    } else if (tagId != null || !forView) {
-      map['tagId'] = null;
+          : TagId;
+    } else if (TagId != null || !forView) {
+      map['TagId'] = null;
+    }
+    if (ContactDetailId != null) {
+      map['ContactDetailId'] = forView
+          ? plContactDetail == null
+              ? ContactDetailId
+              : plContactDetail!.phoneContactId
+          : ContactDetailId;
+    } else if (ContactDetailId != null || !forView) {
+      map['ContactDetailId'] = null;
     }
 
     return map;
@@ -2181,12 +1941,12 @@ class ContactDetailTag extends TableBase {
 
   @override
   List<dynamic> toArgs() {
-    return [contactDetailId, tagId];
+    return [TagId, ContactDetailId];
   }
 
   @override
   List<dynamic> toArgsWithIds() {
-    return [id, contactDetailId, tagId];
+    return [TagId, ContactDetailId];
   }
 
   static Future<List<ContactDetailTag>?> fromWebUrl(Uri uri,
@@ -2238,14 +1998,14 @@ class ContactDetailTag extends TableBase {
         loadedFields = loadedFields ?? [];
         if ((preloadFields == null ||
             loadParents ||
-            preloadFields.contains('plContactDetail'))) {
-          obj.plContactDetail = obj.plContactDetail ??
-              await obj.getContactDetail(loadParents: loadParents);
+            preloadFields.contains('plTag'))) {
+          obj.plTag = obj.plTag ?? await obj.getTag(loadParents: loadParents);
         }
         if ((preloadFields == null ||
             loadParents ||
-            preloadFields.contains('plTag'))) {
-          obj.plTag = obj.plTag ?? await obj.getTag(loadParents: loadParents);
+            preloadFields.contains('plContactDetail'))) {
+          obj.plContactDetail = obj.plContactDetail ??
+              await obj.getContactDetail(loadParents: loadParents);
         }
       } // END RELATIONSHIPS PRELOAD
 
@@ -2255,7 +2015,7 @@ class ContactDetailTag extends TableBase {
   }
 
   /// returns ContactDetailTag by ID if exist, otherwise returns null
-  /// Primary Keys: int? id
+  /// Primary Keys: int? TagId, int? ContactDetailId
   /// bool preload: if true, loads all related child objects (Set preload to true if you want to load all fields related to child or parent)
   /// ex: getById(preload:true) -> Loads all related objects
   /// List<String> preloadFields: specify the fields you want to preload (preload parameter's value should also be "true")
@@ -2263,16 +2023,16 @@ class ContactDetailTag extends TableBase {
   /// bool loadParents: if true, loads all parent objects until the object has no parent
 
   /// <returns>returns [ContactDetailTag] if exist, otherwise returns null
-  Future<ContactDetailTag?> getById(int? id,
+  Future<ContactDetailTag?> getById(int? TagId, int? ContactDetailId,
       {bool preload = false,
       List<String>? preloadFields,
       bool loadParents = false,
       List<String>? loadedFields}) async {
-    if (id == null) {
+    if (TagId == null) {
       return null;
     }
     ContactDetailTag? obj;
-    final data = await _mnContactDetailTag.getById([id]);
+    final data = await _mnContactDetailTag.getById([TagId, ContactDetailId]);
     if (data.length != 0) {
       obj = ContactDetailTag.fromMap(data[0] as Map<String, dynamic>);
 
@@ -2281,14 +2041,14 @@ class ContactDetailTag extends TableBase {
         loadedFields = loadedFields ?? [];
         if ((preloadFields == null ||
             loadParents ||
-            preloadFields.contains('plContactDetail'))) {
-          obj.plContactDetail = obj.plContactDetail ??
-              await obj.getContactDetail(loadParents: loadParents);
+            preloadFields.contains('plTag'))) {
+          obj.plTag = obj.plTag ?? await obj.getTag(loadParents: loadParents);
         }
         if ((preloadFields == null ||
             loadParents ||
-            preloadFields.contains('plTag'))) {
-          obj.plTag = obj.plTag ?? await obj.getTag(loadParents: loadParents);
+            preloadFields.contains('plContactDetail'))) {
+          obj.plContactDetail = obj.plContactDetail ??
+              await obj.getContactDetail(loadParents: loadParents);
         }
       } // END RELATIONSHIPS PRELOAD
     } else {
@@ -2297,45 +2057,26 @@ class ContactDetailTag extends TableBase {
     return obj;
   }
 
-  /// Saves the (ContactDetailTag) object. If the id field is null, saves as a new record and returns new id, if id is not null then updates record
-  /// ignoreBatch = true as a default. Set ignoreBatch to false if you run more than one save() operation those are between batchStart and batchCommit
-  /// <returns>Returns id
+  /// Saves the (ContactDetailTag) object. If the Primary Key (TagId) field is null, returns Error.
+  /// INSERTS (If not exist) OR REPLACES (If exist) data while Primary Key is not null.
+  /// Call the saveAs() method if you do not want to save it when there is another row with the same TagId
+  /// <returns>Returns BoolResult
   @override
-  Future<int?> save({bool ignoreBatch = true}) async {
-    if (id == null || id == 0) {
-      id = await _mnContactDetailTag.insert(this, ignoreBatch);
-    } else {
-      await _mnContactDetailTag.update(this);
+  Future<BoolResult> save({bool ignoreBatch = true}) async {
+    final result = BoolResult(success: false);
+    try {
+      await _mnContactDetailTag.rawInsert(
+          'INSERT ${isSaved! ? 'OR REPLACE' : ''} INTO ContactDetailTag ( TagId, ContactDetailId)  VALUES (?,?)',
+          toArgsWithIds(),
+          ignoreBatch);
+      result.success = true;
+      isSaved = true;
+    } catch (e) {
+      result.errorMessage = e.toString();
     }
 
-    return id;
-  }
-
-  /// Saves the (ContactDetailTag) object. If the id field is null, saves as a new record and returns new id, if id is not null then updates record
-  /// ignoreBatch = true as a default. Set ignoreBatch to false if you run more than one save() operation those are between batchStart and batchCommit
-  /// <returns>Returns id
-  @override
-  Future<int?> saveOrThrow({bool ignoreBatch = true}) async {
-    if (id == null || id == 0) {
-      id = await _mnContactDetailTag.insertOrThrow(this, ignoreBatch);
-
-      isInsert = true;
-    } else {
-      // id= await _upsert(); // removed in sqfentity_gen 1.3.0+6
-      await _mnContactDetailTag.updateOrThrow(this);
-    }
-
-    return id;
-  }
-
-  /// saveAs ContactDetailTag. Returns a new Primary Key value of ContactDetailTag
-
-  /// <returns>Returns a new Primary Key value of ContactDetailTag
-  @override
-  Future<int?> saveAs({bool ignoreBatch = true}) async {
-    id = null;
-
-    return save(ignoreBatch: ignoreBatch);
+    saveResult = result;
+    return result;
   }
 
   /// saveAll method saves the sent List<ContactDetailTag> as a bulk in one transaction
@@ -2346,41 +2087,37 @@ class ContactDetailTag extends TableBase {
     // If there is no open transaction, start one
     final isStartedBatch = await Connect2DB().batchStart();
     for (final obj in contactdetailtags) {
-      await obj.save(ignoreBatch: false);
+      await obj.save();
     }
     if (!isStartedBatch) {
       result = await Connect2DB().batchCommit(
           exclusive: exclusive,
           noResult: noResult,
           continueOnError: continueOnError);
-      for (int i = 0; i < contactdetailtags.length; i++) {
-        if (contactdetailtags[i].id == null) {
-          contactdetailtags[i].id = result![i] as int;
-        }
-      }
     }
     return result!;
   }
 
   /// Updates if the record exists, otherwise adds a new row
-  /// <returns>Returns id
+  /// <returns>Returns 1
   @override
   Future<int?> upsert({bool ignoreBatch = true}) async {
     try {
       final result = await _mnContactDetailTag.rawInsert(
-          'INSERT OR REPLACE INTO ContactDetailTag (id, contactDetailId, tagId)  VALUES (?,?,?)',
-          [id, contactDetailId, tagId],
+          'INSERT OR REPLACE INTO ContactDetailTag ( TagId, ContactDetailId)  VALUES (?,?)',
+          [TagId, ContactDetailId],
           ignoreBatch);
       if (result! > 0) {
         saveResult = BoolResult(
             success: true,
-            successMessage: 'ContactDetailTag id=$id updated successfully');
+            successMessage:
+                'ContactDetailTag TagId=$TagId updated successfully');
       } else {
         saveResult = BoolResult(
             success: false,
-            errorMessage: 'ContactDetailTag id=$id did not update');
+            errorMessage: 'ContactDetailTag TagId=$TagId did not update');
       }
-      return id;
+      return TagId;
     } catch (e) {
       saveResult = BoolResult(
           success: false,
@@ -2396,7 +2133,7 @@ class ContactDetailTag extends TableBase {
   Future<BoolCommitResult> upsertAll(List<ContactDetailTag> contactdetailtags,
       {bool? exclusive, bool? noResult, bool? continueOnError}) async {
     final results = await _mnContactDetailTag.rawInsertAll(
-        'INSERT OR REPLACE INTO ContactDetailTag (id, contactDetailId, tagId)  VALUES (?,?,?)',
+        'INSERT OR REPLACE INTO ContactDetailTag ( TagId, ContactDetailId)  VALUES (?,?)',
         contactdetailtags,
         exclusive: exclusive,
         noResult: noResult,
@@ -2409,13 +2146,16 @@ class ContactDetailTag extends TableBase {
   /// <returns>BoolResult res.success= true (Deleted), false (Could not be deleted)
   @override
   Future<BoolResult> delete([bool hardDelete = false]) async {
-    debugPrint('SQFENTITIY: delete ContactDetailTag invoked (id=$id)');
+    debugPrint('SQFENTITIY: delete ContactDetailTag invoked (TagId=$TagId)');
     if (!_softDeleteActivated || hardDelete) {
-      return _mnContactDetailTag
-          .delete(QueryParams(whereString: 'id=?', whereArguments: [id]));
+      return _mnContactDetailTag.delete(QueryParams(
+          whereString: 'TagId=? AND ContactDetailId=?',
+          whereArguments: [TagId, ContactDetailId]));
     } else {
       return _mnContactDetailTag.updateBatch(
-          QueryParams(whereString: 'id=?', whereArguments: [id]),
+          QueryParams(
+              whereString: 'TagId=? AND ContactDetailId=?',
+              whereArguments: [TagId, ContactDetailId]),
           {'isDeleted': 1});
     }
   }
@@ -2443,12 +2183,15 @@ class ContactDetailTag extends TableBase {
       ..qparams.distinct = true;
   }
 
-  void _setDefaultValues() {}
+  void _setDefaultValues() {
+    isSaved = false;
+  }
 
   @override
   void rollbackPk() {
     if (isInsert == true) {
-      id = null;
+      TagId = null;
+      ContactDetailId = null;
     }
   }
 
@@ -2652,20 +2395,15 @@ class ContactDetailTagFilterBuilder extends ConjunctionBase {
           dbType: dbtype, columnName: colName, wStartBlock: openedBlock);
   }
 
-  ContactDetailTagField? _id;
-  ContactDetailTagField get id {
-    return _id = _setField(_id, 'id', DbType.integer);
+  ContactDetailTagField? _TagId;
+  ContactDetailTagField get TagId {
+    return _TagId = _setField(_TagId, 'TagId', DbType.integer);
   }
 
-  ContactDetailTagField? _contactDetailId;
-  ContactDetailTagField get contactDetailId {
-    return _contactDetailId =
-        _setField(_contactDetailId, 'contactDetailId', DbType.integer);
-  }
-
-  ContactDetailTagField? _tagId;
-  ContactDetailTagField get tagId {
-    return _tagId = _setField(_tagId, 'tagId', DbType.integer);
+  ContactDetailTagField? _ContactDetailId;
+  ContactDetailTagField get ContactDetailId {
+    return _ContactDetailId =
+        _setField(_ContactDetailId, 'ContactDetailId', DbType.integer);
   }
 
   /// Deletes List<ContactDetailTag> bulk by query
@@ -2692,7 +2430,7 @@ class ContactDetailTagFilterBuilder extends ConjunctionBase {
     buildParameters();
     if (qparams.limit! > 0 || qparams.offset! > 0) {
       qparams.whereString =
-          'id IN (SELECT id from ContactDetailTag ${qparams.whereString!.isNotEmpty ? 'WHERE ${qparams.whereString}' : ''}${qparams.limit! > 0 ? ' LIMIT ${qparams.limit}' : ''}${qparams.offset! > 0 ? ' OFFSET ${qparams.offset}' : ''})';
+          'TagId IN (SELECT TagId from ContactDetailTag ${qparams.whereString!.isNotEmpty ? 'WHERE ${qparams.whereString}' : ''}${qparams.limit! > 0 ? ' LIMIT ${qparams.limit}' : ''}${qparams.offset! > 0 ? ' OFFSET ${qparams.offset}' : ''})';
     }
     return _mnContactDetailTag!.updateBatch(qparams, values);
   }
@@ -2723,14 +2461,14 @@ class ContactDetailTagFilterBuilder extends ConjunctionBase {
         loadedFields = loadedFields ?? [];
         if ((preloadFields == null ||
             loadParents ||
-            preloadFields.contains('plContactDetail'))) {
-          obj.plContactDetail = obj.plContactDetail ??
-              await obj.getContactDetail(loadParents: loadParents);
+            preloadFields.contains('plTag'))) {
+          obj.plTag = obj.plTag ?? await obj.getTag(loadParents: loadParents);
         }
         if ((preloadFields == null ||
             loadParents ||
-            preloadFields.contains('plTag'))) {
-          obj.plTag = obj.plTag ?? await obj.getTag(loadParents: loadParents);
+            preloadFields.contains('plContactDetail'))) {
+          obj.plContactDetail = obj.plContactDetail ??
+              await obj.getContactDetail(loadParents: loadParents);
         }
       } // END RELATIONSHIPS PRELOAD
     } else {
@@ -2841,27 +2579,22 @@ class ContactDetailTagFilterBuilder extends ConjunctionBase {
       buildParameters();
     }
     _retVal['sql'] =
-        'SELECT `id` FROM ContactDetailTag WHERE ${qparams.whereString}';
+        'SELECT `TagId`ContactDetailId` FROM ContactDetailTag WHERE ${qparams.whereString}';
     _retVal['args'] = qparams.whereArguments;
     return _retVal;
   }
 
-  /// This method returns Primary Key List<int>.
-  /// <returns>List<int>
+  /// This method returns Primary Key List<TagId,ContactDetailId> [ContactDetailTag]
+  /// <returns>List<TagId,ContactDetailId>
   @override
-  Future<List<int>> toListPrimaryKey([bool buildParams = true]) async {
+  Future<List<ContactDetailTag>> toListPrimaryKey(
+      [bool buildParams = true]) async {
     if (buildParams) {
       buildParameters();
     }
-    final List<int> idData = <int>[];
-    qparams.selectColumns = ['id'];
-    final idFuture = await _mnContactDetailTag!.toList(qparams);
-
-    final int count = idFuture.length;
-    for (int i = 0; i < count; i++) {
-      idData.add(idFuture[i]['id'] as int);
-    }
-    return idData;
+    qparams.selectColumns = ['TagId', 'ContactDetailId'];
+    final contactdetailtagFuture = await _mnContactDetailTag!.toList(qparams);
+    return await ContactDetailTag.fromMapList(contactdetailtagFuture);
   }
 
   /// Returns List<dynamic> for selected columns. Use this method for 'groupBy' with min,max,avg..  [ContactDetailTag]
@@ -2906,22 +2639,17 @@ class ContactDetailTagFilterBuilder extends ConjunctionBase {
 
 // region ContactDetailTagFields
 class ContactDetailTagFields {
-  static TableField? _fId;
-  static TableField get id {
-    return _fId = _fId ?? SqlSyntax.setField(_fId, 'id', DbType.integer);
+  static TableField? _fTagId;
+  static TableField get TagId {
+    return _fTagId =
+        _fTagId ?? SqlSyntax.setField(_fTagId, 'TagId', DbType.integer);
   }
 
   static TableField? _fContactDetailId;
-  static TableField get contactDetailId {
+  static TableField get ContactDetailId {
     return _fContactDetailId = _fContactDetailId ??
         SqlSyntax.setField(
-            _fContactDetailId, 'contactDetailId', DbType.integer);
-  }
-
-  static TableField? _fTagId;
-  static TableField get tagId {
-    return _fTagId =
-        _fTagId ?? SqlSyntax.setField(_fTagId, 'tagId', DbType.integer);
+            _fContactDetailId, 'ContactDetailId', DbType.integer);
   }
 }
 // endregion ContactDetailTagFields
@@ -2934,965 +2662,11 @@ class ContactDetailTagManager extends SqfEntityProvider {
             primaryKeyList: _primaryKeyList,
             whereStr: _whereStr);
   static const String _tableName = 'ContactDetailTag';
-  static const List<String> _primaryKeyList = ['id'];
-  static const String _whereStr = 'id=?';
+  static const List<String> _primaryKeyList = ['TagId', 'ContactDetailId'];
+  static const String _whereStr = 'TagId=? AND ContactDetailId=?';
 }
 
 //endregion ContactDetailTagManager
-// region ContactDetailRelation
-class ContactDetailRelation extends TableBase {
-  ContactDetailRelation(
-      {this.id,
-      this.relationName,
-      this.contactDetailId1,
-      this.contactDetailId2}) {
-    _setDefaultValues();
-    softDeleteActivated = false;
-  }
-  ContactDetailRelation.withFields(
-      this.relationName, this.contactDetailId1, this.contactDetailId2) {
-    _setDefaultValues();
-  }
-  ContactDetailRelation.withId(this.id, this.relationName,
-      this.contactDetailId1, this.contactDetailId2) {
-    _setDefaultValues();
-  }
-  // fromMap v2.0
-  ContactDetailRelation.fromMap(Map<String, dynamic> o,
-      {bool setDefaultValues = true}) {
-    if (setDefaultValues) {
-      _setDefaultValues();
-    }
-    id = int.tryParse(o['id'].toString());
-    if (o['relationName'] != null) {
-      relationName = o['relationName'].toString();
-    }
-    contactDetailId1 = int.tryParse(o['contactDetailId1'].toString());
-
-    contactDetailId2 = int.tryParse(o['contactDetailId2'].toString());
-
-    // RELATIONSHIPS FromMAP
-    plContactDetail = o['contactDetail'] != null
-        ? ContactDetail.fromMap(o['contactDetail'] as Map<String, dynamic>)
-        : null;
-    plContactDetailByContactDetailId2 = o['contactDetail'] != null
-        ? ContactDetail.fromMap(o['contactDetail'] as Map<String, dynamic>)
-        : null;
-    // END RELATIONSHIPS FromMAP
-  }
-  // FIELDS (ContactDetailRelation)
-  int? id;
-  String? relationName;
-  int? contactDetailId1;
-  int? contactDetailId2;
-
-  // end FIELDS (ContactDetailRelation)
-
-// RELATIONSHIPS (ContactDetailRelation)
-  /// to load parent of items to this field, use preload parameter ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
-  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plContactDetail', 'plField2'..]) or so on..
-  ContactDetail? plContactDetail;
-
-  /// get ContactDetail By ContactDetailId1
-  Future<ContactDetail?> getContactDetail(
-      {bool loadParents = false, List<String>? loadedFields}) async {
-    final _obj = await ContactDetail().getById(contactDetailId1,
-        loadParents: loadParents, loadedFields: loadedFields);
-    return _obj;
-  }
-
-  /// to load parent of items to this field, use preload parameter ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
-  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plContactDetailByContactDetailId2', 'plField2'..]) or so on..
-  ContactDetail? plContactDetailByContactDetailId2;
-
-  /// get ContactDetail By ContactDetailId2
-  Future<ContactDetail?> getContactDetailByContactDetailId2(
-      {bool loadParents = false, List<String>? loadedFields}) async {
-    final _obj = await ContactDetail().getById(contactDetailId2,
-        loadParents: loadParents, loadedFields: loadedFields);
-    return _obj;
-  }
-  // END RELATIONSHIPS (ContactDetailRelation)
-
-  static const bool _softDeleteActivated = false;
-  ContactDetailRelationManager? __mnContactDetailRelation;
-
-  ContactDetailRelationManager get _mnContactDetailRelation {
-    return __mnContactDetailRelation =
-        __mnContactDetailRelation ?? ContactDetailRelationManager();
-  }
-
-  // METHODS
-  @override
-  Map<String, dynamic> toMap(
-      {bool forQuery = false, bool forJson = false, bool forView = false}) {
-    final map = <String, dynamic>{};
-    map['id'] = id;
-    if (relationName != null || !forView) {
-      map['relationName'] = relationName;
-    }
-    if (contactDetailId1 != null) {
-      map['contactDetailId1'] = forView
-          ? plContactDetail == null
-              ? contactDetailId1
-              : plContactDetail!.contactId
-          : contactDetailId1;
-    } else if (contactDetailId1 != null || !forView) {
-      map['contactDetailId1'] = null;
-    }
-    if (contactDetailId2 != null) {
-      map['contactDetailId2'] = forView
-          ? plContactDetail == null
-              ? contactDetailId2
-              : plContactDetail!.contactId
-          : contactDetailId2;
-    } else if (contactDetailId2 != null || !forView) {
-      map['contactDetailId2'] = null;
-    }
-
-    return map;
-  }
-
-  @override
-  Future<Map<String, dynamic>> toMapWithChildren(
-      [bool forQuery = false,
-      bool forJson = false,
-      bool forView = false]) async {
-    final map = <String, dynamic>{};
-    map['id'] = id;
-    if (relationName != null || !forView) {
-      map['relationName'] = relationName;
-    }
-    if (contactDetailId1 != null) {
-      map['contactDetailId1'] = forView
-          ? plContactDetail == null
-              ? contactDetailId1
-              : plContactDetail!.contactId
-          : contactDetailId1;
-    } else if (contactDetailId1 != null || !forView) {
-      map['contactDetailId1'] = null;
-    }
-    if (contactDetailId2 != null) {
-      map['contactDetailId2'] = forView
-          ? plContactDetail == null
-              ? contactDetailId2
-              : plContactDetail!.contactId
-          : contactDetailId2;
-    } else if (contactDetailId2 != null || !forView) {
-      map['contactDetailId2'] = null;
-    }
-
-    return map;
-  }
-
-  /// This method returns Json String [ContactDetailRelation]
-  @override
-  String toJson() {
-    return json.encode(toMap(forJson: true));
-  }
-
-  /// This method returns Json String [ContactDetailRelation]
-  @override
-  Future<String> toJsonWithChilds() async {
-    return json.encode(await toMapWithChildren(false, true));
-  }
-
-  @override
-  List<dynamic> toArgs() {
-    return [relationName, contactDetailId1, contactDetailId2];
-  }
-
-  @override
-  List<dynamic> toArgsWithIds() {
-    return [id, relationName, contactDetailId1, contactDetailId2];
-  }
-
-  static Future<List<ContactDetailRelation>?> fromWebUrl(Uri uri,
-      {Map<String, String>? headers}) async {
-    try {
-      final response = await http.get(uri, headers: headers);
-      return await fromJson(response.body);
-    } catch (e) {
-      debugPrint(
-          'SQFENTITY ERROR ContactDetailRelation.fromWebUrl: ErrorMessage: ${e.toString()}');
-      return null;
-    }
-  }
-
-  Future<http.Response> postUrl(Uri uri, {Map<String, String>? headers}) {
-    return http.post(uri, headers: headers, body: toJson());
-  }
-
-  static Future<List<ContactDetailRelation>> fromJson(String jsonBody) async {
-    final Iterable list = await json.decode(jsonBody) as Iterable;
-    var objList = <ContactDetailRelation>[];
-    try {
-      objList = list
-          .map((contactdetailrelation) => ContactDetailRelation.fromMap(
-              contactdetailrelation as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      debugPrint(
-          'SQFENTITY ERROR ContactDetailRelation.fromJson: ErrorMessage: ${e.toString()}');
-    }
-    return objList;
-  }
-
-  static Future<List<ContactDetailRelation>> fromMapList(List<dynamic> data,
-      {bool preload = false,
-      List<String>? preloadFields,
-      bool loadParents = false,
-      List<String>? loadedFields,
-      bool setDefaultValues = true}) async {
-    final List<ContactDetailRelation> objList = <ContactDetailRelation>[];
-    loadedFields = loadedFields ?? [];
-    for (final map in data) {
-      final obj = ContactDetailRelation.fromMap(map as Map<String, dynamic>,
-          setDefaultValues: setDefaultValues);
-      // final List<String> _loadedFields = List<String>.from(loadedFields);
-
-      // RELATIONSHIPS PRELOAD
-      if (preload || loadParents) {
-        loadedFields = loadedFields ?? [];
-        if ((preloadFields == null ||
-            loadParents ||
-            preloadFields.contains('plContactDetail'))) {
-          obj.plContactDetail = obj.plContactDetail ??
-              await obj.getContactDetail(loadParents: loadParents);
-        }
-        if ((preloadFields == null ||
-            loadParents ||
-            preloadFields.contains('plContactDetailByContactDetailId2'))) {
-          obj.plContactDetailByContactDetailId2 =
-              obj.plContactDetailByContactDetailId2 ??
-                  await obj.getContactDetailByContactDetailId2(
-                      loadParents: loadParents);
-        }
-      } // END RELATIONSHIPS PRELOAD
-
-      objList.add(obj);
-    }
-    return objList;
-  }
-
-  /// returns ContactDetailRelation by ID if exist, otherwise returns null
-  /// Primary Keys: int? id
-  /// bool preload: if true, loads all related child objects (Set preload to true if you want to load all fields related to child or parent)
-  /// ex: getById(preload:true) -> Loads all related objects
-  /// List<String> preloadFields: specify the fields you want to preload (preload parameter's value should also be "true")
-  /// ex: getById(preload:true, preloadFields:['plField1','plField2'... etc])  -> Loads only certain fields what you specified
-  /// bool loadParents: if true, loads all parent objects until the object has no parent
-
-  /// <returns>returns [ContactDetailRelation] if exist, otherwise returns null
-  Future<ContactDetailRelation?> getById(int? id,
-      {bool preload = false,
-      List<String>? preloadFields,
-      bool loadParents = false,
-      List<String>? loadedFields}) async {
-    if (id == null) {
-      return null;
-    }
-    ContactDetailRelation? obj;
-    final data = await _mnContactDetailRelation.getById([id]);
-    if (data.length != 0) {
-      obj = ContactDetailRelation.fromMap(data[0] as Map<String, dynamic>);
-
-      // RELATIONSHIPS PRELOAD
-      if (preload || loadParents) {
-        loadedFields = loadedFields ?? [];
-        if ((preloadFields == null ||
-            loadParents ||
-            preloadFields.contains('plContactDetail'))) {
-          obj.plContactDetail = obj.plContactDetail ??
-              await obj.getContactDetail(loadParents: loadParents);
-        }
-        if ((preloadFields == null ||
-            loadParents ||
-            preloadFields.contains('plContactDetailByContactDetailId2'))) {
-          obj.plContactDetailByContactDetailId2 =
-              obj.plContactDetailByContactDetailId2 ??
-                  await obj.getContactDetailByContactDetailId2(
-                      loadParents: loadParents);
-        }
-      } // END RELATIONSHIPS PRELOAD
-    } else {
-      obj = null;
-    }
-    return obj;
-  }
-
-  /// Saves the (ContactDetailRelation) object. If the id field is null, saves as a new record and returns new id, if id is not null then updates record
-  /// ignoreBatch = true as a default. Set ignoreBatch to false if you run more than one save() operation those are between batchStart and batchCommit
-  /// <returns>Returns id
-  @override
-  Future<int?> save({bool ignoreBatch = true}) async {
-    if (id == null || id == 0) {
-      id = await _mnContactDetailRelation.insert(this, ignoreBatch);
-    } else {
-      await _mnContactDetailRelation.update(this);
-    }
-
-    return id;
-  }
-
-  /// Saves the (ContactDetailRelation) object. If the id field is null, saves as a new record and returns new id, if id is not null then updates record
-  /// ignoreBatch = true as a default. Set ignoreBatch to false if you run more than one save() operation those are between batchStart and batchCommit
-  /// <returns>Returns id
-  @override
-  Future<int?> saveOrThrow({bool ignoreBatch = true}) async {
-    if (id == null || id == 0) {
-      id = await _mnContactDetailRelation.insertOrThrow(this, ignoreBatch);
-
-      isInsert = true;
-    } else {
-      // id= await _upsert(); // removed in sqfentity_gen 1.3.0+6
-      await _mnContactDetailRelation.updateOrThrow(this);
-    }
-
-    return id;
-  }
-
-  /// saveAs ContactDetailRelation. Returns a new Primary Key value of ContactDetailRelation
-
-  /// <returns>Returns a new Primary Key value of ContactDetailRelation
-  @override
-  Future<int?> saveAs({bool ignoreBatch = true}) async {
-    id = null;
-
-    return save(ignoreBatch: ignoreBatch);
-  }
-
-  /// saveAll method saves the sent List<ContactDetailRelation> as a bulk in one transaction
-  /// Returns a <List<BoolResult>>
-  static Future<List<dynamic>> saveAll(
-      List<ContactDetailRelation> contactdetailrelations,
-      {bool? exclusive,
-      bool? noResult,
-      bool? continueOnError}) async {
-    List<dynamic>? result = [];
-    // If there is no open transaction, start one
-    final isStartedBatch = await Connect2DB().batchStart();
-    for (final obj in contactdetailrelations) {
-      await obj.save(ignoreBatch: false);
-    }
-    if (!isStartedBatch) {
-      result = await Connect2DB().batchCommit(
-          exclusive: exclusive,
-          noResult: noResult,
-          continueOnError: continueOnError);
-      for (int i = 0; i < contactdetailrelations.length; i++) {
-        if (contactdetailrelations[i].id == null) {
-          contactdetailrelations[i].id = result![i] as int;
-        }
-      }
-    }
-    return result!;
-  }
-
-  /// Updates if the record exists, otherwise adds a new row
-  /// <returns>Returns id
-  @override
-  Future<int?> upsert({bool ignoreBatch = true}) async {
-    try {
-      final result = await _mnContactDetailRelation.rawInsert(
-          'INSERT OR REPLACE INTO ContactDetailRelation (id, relationName, contactDetailId1, contactDetailId2)  VALUES (?,?,?,?)',
-          [id, relationName, contactDetailId1, contactDetailId2],
-          ignoreBatch);
-      if (result! > 0) {
-        saveResult = BoolResult(
-            success: true,
-            successMessage:
-                'ContactDetailRelation id=$id updated successfully');
-      } else {
-        saveResult = BoolResult(
-            success: false,
-            errorMessage: 'ContactDetailRelation id=$id did not update');
-      }
-      return id;
-    } catch (e) {
-      saveResult = BoolResult(
-          success: false,
-          errorMessage:
-              'ContactDetailRelation Save failed. Error: ${e.toString()}');
-      return null;
-    }
-  }
-
-  /// inserts or replaces the sent List<<ContactDetailRelation>> as a bulk in one transaction.
-  /// upsertAll() method is faster then saveAll() method. upsertAll() should be used when you are sure that the primary key is greater than zero
-  /// Returns a BoolCommitResult
-  @override
-  Future<BoolCommitResult> upsertAll(
-      List<ContactDetailRelation> contactdetailrelations,
-      {bool? exclusive,
-      bool? noResult,
-      bool? continueOnError}) async {
-    final results = await _mnContactDetailRelation.rawInsertAll(
-        'INSERT OR REPLACE INTO ContactDetailRelation (id, relationName, contactDetailId1, contactDetailId2)  VALUES (?,?,?,?)',
-        contactdetailrelations,
-        exclusive: exclusive,
-        noResult: noResult,
-        continueOnError: continueOnError);
-    return results;
-  }
-
-  /// Deletes ContactDetailRelation
-
-  /// <returns>BoolResult res.success= true (Deleted), false (Could not be deleted)
-  @override
-  Future<BoolResult> delete([bool hardDelete = false]) async {
-    debugPrint('SQFENTITIY: delete ContactDetailRelation invoked (id=$id)');
-    if (!_softDeleteActivated || hardDelete) {
-      return _mnContactDetailRelation
-          .delete(QueryParams(whereString: 'id=?', whereArguments: [id]));
-    } else {
-      return _mnContactDetailRelation.updateBatch(
-          QueryParams(whereString: 'id=?', whereArguments: [id]),
-          {'isDeleted': 1});
-    }
-  }
-
-  @override
-  Future<BoolResult> recover([bool recoverChilds = true]) {
-    // not implemented because:
-    final msg =
-        'set useSoftDeleting:true in the table definition of [ContactDetailRelation] to use this feature';
-    throw UnimplementedError(msg);
-  }
-
-  @override
-  ContactDetailRelationFilterBuilder select(
-      {List<String>? columnsToSelect, bool? getIsDeleted}) {
-    return ContactDetailRelationFilterBuilder(this, getIsDeleted)
-      ..qparams.selectColumns = columnsToSelect;
-  }
-
-  @override
-  ContactDetailRelationFilterBuilder distinct(
-      {List<String>? columnsToSelect, bool? getIsDeleted}) {
-    return ContactDetailRelationFilterBuilder(this, getIsDeleted)
-      ..qparams.selectColumns = columnsToSelect
-      ..qparams.distinct = true;
-  }
-
-  void _setDefaultValues() {}
-
-  @override
-  void rollbackPk() {
-    if (isInsert == true) {
-      id = null;
-    }
-  }
-
-  // END METHODS
-  // BEGIN CUSTOM CODE
-  /*
-      you can define customCode property of your SqfEntityTable constant. For example:
-      const tablePerson = SqfEntityTable(
-      tableName: 'person',
-      primaryKeyName: 'id',
-      primaryKeyType: PrimaryKeyType.integer_auto_incremental,
-      fields: [
-        SqfEntityField('firstName', DbType.text),
-        SqfEntityField('lastName', DbType.text),
-      ],
-      customCode: '''
-       String fullName()
-       { 
-         return '$firstName $lastName';
-       }
-      ''');
-     */
-  // END CUSTOM CODE
-}
-// endregion contactdetailrelation
-
-// region ContactDetailRelationField
-class ContactDetailRelationField extends FilterBase {
-  ContactDetailRelationField(
-      ContactDetailRelationFilterBuilder contactdetailrelationFB)
-      : super(contactdetailrelationFB);
-
-  @override
-  ContactDetailRelationFilterBuilder equals(dynamic pValue) {
-    return super.equals(pValue) as ContactDetailRelationFilterBuilder;
-  }
-
-  @override
-  ContactDetailRelationFilterBuilder equalsOrNull(dynamic pValue) {
-    return super.equalsOrNull(pValue) as ContactDetailRelationFilterBuilder;
-  }
-
-  @override
-  ContactDetailRelationFilterBuilder isNull() {
-    return super.isNull() as ContactDetailRelationFilterBuilder;
-  }
-
-  @override
-  ContactDetailRelationFilterBuilder contains(dynamic pValue) {
-    return super.contains(pValue) as ContactDetailRelationFilterBuilder;
-  }
-
-  @override
-  ContactDetailRelationFilterBuilder startsWith(dynamic pValue) {
-    return super.startsWith(pValue) as ContactDetailRelationFilterBuilder;
-  }
-
-  @override
-  ContactDetailRelationFilterBuilder endsWith(dynamic pValue) {
-    return super.endsWith(pValue) as ContactDetailRelationFilterBuilder;
-  }
-
-  @override
-  ContactDetailRelationFilterBuilder between(dynamic pFirst, dynamic pLast) {
-    return super.between(pFirst, pLast) as ContactDetailRelationFilterBuilder;
-  }
-
-  @override
-  ContactDetailRelationFilterBuilder greaterThan(dynamic pValue) {
-    return super.greaterThan(pValue) as ContactDetailRelationFilterBuilder;
-  }
-
-  @override
-  ContactDetailRelationFilterBuilder lessThan(dynamic pValue) {
-    return super.lessThan(pValue) as ContactDetailRelationFilterBuilder;
-  }
-
-  @override
-  ContactDetailRelationFilterBuilder greaterThanOrEquals(dynamic pValue) {
-    return super.greaterThanOrEquals(pValue)
-        as ContactDetailRelationFilterBuilder;
-  }
-
-  @override
-  ContactDetailRelationFilterBuilder lessThanOrEquals(dynamic pValue) {
-    return super.lessThanOrEquals(pValue) as ContactDetailRelationFilterBuilder;
-  }
-
-  @override
-  ContactDetailRelationFilterBuilder inValues(dynamic pValue) {
-    return super.inValues(pValue) as ContactDetailRelationFilterBuilder;
-  }
-
-  @override
-  ContactDetailRelationField get not {
-    return super.not as ContactDetailRelationField;
-  }
-}
-// endregion ContactDetailRelationField
-
-// region ContactDetailRelationFilterBuilder
-class ContactDetailRelationFilterBuilder extends ConjunctionBase {
-  ContactDetailRelationFilterBuilder(
-      ContactDetailRelation obj, bool? getIsDeleted)
-      : super(obj, getIsDeleted) {
-    _mnContactDetailRelation = obj._mnContactDetailRelation;
-    _softDeleteActivated = obj.softDeleteActivated;
-  }
-
-  bool _softDeleteActivated = false;
-  ContactDetailRelationManager? _mnContactDetailRelation;
-
-  /// put the sql keyword 'AND'
-  @override
-  ContactDetailRelationFilterBuilder get and {
-    super.and;
-    return this;
-  }
-
-  /// put the sql keyword 'OR'
-  @override
-  ContactDetailRelationFilterBuilder get or {
-    super.or;
-    return this;
-  }
-
-  /// open parentheses
-  @override
-  ContactDetailRelationFilterBuilder get startBlock {
-    super.startBlock;
-    return this;
-  }
-
-  /// String whereCriteria, write raw query without 'where' keyword. Like this: 'field1 like 'test%' and field2 = 3'
-  @override
-  ContactDetailRelationFilterBuilder where(String? whereCriteria,
-      {dynamic parameterValue}) {
-    super.where(whereCriteria, parameterValue: parameterValue);
-    return this;
-  }
-
-  /// page = page number,
-  /// pagesize = row(s) per page
-  @override
-  ContactDetailRelationFilterBuilder page(int page, int pagesize) {
-    super.page(page, pagesize);
-    return this;
-  }
-
-  /// int count = LIMIT
-  @override
-  ContactDetailRelationFilterBuilder top(int count) {
-    super.top(count);
-    return this;
-  }
-
-  /// close parentheses
-  @override
-  ContactDetailRelationFilterBuilder get endBlock {
-    super.endBlock;
-    return this;
-  }
-
-  /// argFields might be String or List<String>.
-  /// Example 1: argFields='name, date'
-  /// Example 2: argFields = ['name', 'date']
-  @override
-  ContactDetailRelationFilterBuilder orderBy(dynamic argFields) {
-    super.orderBy(argFields);
-    return this;
-  }
-
-  /// argFields might be String or List<String>.
-  /// Example 1: argFields='field1, field2'
-  /// Example 2: argFields = ['field1', 'field2']
-  @override
-  ContactDetailRelationFilterBuilder orderByDesc(dynamic argFields) {
-    super.orderByDesc(argFields);
-    return this;
-  }
-
-  /// argFields might be String or List<String>.
-  /// Example 1: argFields='field1, field2'
-  /// Example 2: argFields = ['field1', 'field2']
-  @override
-  ContactDetailRelationFilterBuilder groupBy(dynamic argFields) {
-    super.groupBy(argFields);
-    return this;
-  }
-
-  /// argFields might be String or List<String>.
-  /// Example 1: argFields='name, date'
-  /// Example 2: argFields = ['name', 'date']
-  @override
-  ContactDetailRelationFilterBuilder having(dynamic argFields) {
-    super.having(argFields);
-    return this;
-  }
-
-  ContactDetailRelationField _setField(
-      ContactDetailRelationField? field, String colName, DbType dbtype) {
-    return ContactDetailRelationField(this)
-      ..param = DbParameter(
-          dbType: dbtype, columnName: colName, wStartBlock: openedBlock);
-  }
-
-  ContactDetailRelationField? _id;
-  ContactDetailRelationField get id {
-    return _id = _setField(_id, 'id', DbType.integer);
-  }
-
-  ContactDetailRelationField? _relationName;
-  ContactDetailRelationField get relationName {
-    return _relationName =
-        _setField(_relationName, 'relationName', DbType.text);
-  }
-
-  ContactDetailRelationField? _contactDetailId1;
-  ContactDetailRelationField get contactDetailId1 {
-    return _contactDetailId1 =
-        _setField(_contactDetailId1, 'contactDetailId1', DbType.integer);
-  }
-
-  ContactDetailRelationField? _contactDetailId2;
-  ContactDetailRelationField get contactDetailId2 {
-    return _contactDetailId2 =
-        _setField(_contactDetailId2, 'contactDetailId2', DbType.integer);
-  }
-
-  /// Deletes List<ContactDetailRelation> bulk by query
-  ///
-  /// <returns>BoolResult res.success= true (Deleted), false (Could not be deleted)
-  @override
-  Future<BoolResult> delete([bool hardDelete = false]) async {
-    buildParameters();
-    var r = BoolResult(success: false);
-
-    if (_softDeleteActivated && !hardDelete) {
-      r = await _mnContactDetailRelation!
-          .updateBatch(qparams, {'isDeleted': 1});
-    } else {
-      r = await _mnContactDetailRelation!.delete(qparams);
-    }
-    return r;
-  }
-
-  /// using:
-  /// update({'fieldName': Value})
-  /// fieldName must be String. Value is dynamic, it can be any of the (int, bool, String.. )
-  @override
-  Future<BoolResult> update(Map<String, dynamic> values) {
-    buildParameters();
-    if (qparams.limit! > 0 || qparams.offset! > 0) {
-      qparams.whereString =
-          'id IN (SELECT id from ContactDetailRelation ${qparams.whereString!.isNotEmpty ? 'WHERE ${qparams.whereString}' : ''}${qparams.limit! > 0 ? ' LIMIT ${qparams.limit}' : ''}${qparams.offset! > 0 ? ' OFFSET ${qparams.offset}' : ''})';
-    }
-    return _mnContactDetailRelation!.updateBatch(qparams, values);
-  }
-
-  /// This method always returns [ContactDetailRelation] Obj if exist, otherwise returns null
-  /// bool preload: if true, loads all related child objects (Set preload to true if you want to load all fields related to child or parent)
-  /// ex: toSingle(preload:true) -> Loads all related objects
-  /// List<String> preloadFields: specify the fields you want to preload (preload parameter's value should also be "true")
-  /// ex: toSingle(preload:true, preloadFields:['plField1','plField2'... etc])  -> Loads only certain fields what you specified
-  /// bool loadParents: if true, loads all parent objects until the object has no parent
-
-  /// <returns> ContactDetailRelation?
-  @override
-  Future<ContactDetailRelation?> toSingle(
-      {bool preload = false,
-      List<String>? preloadFields,
-      bool loadParents = false,
-      List<String>? loadedFields}) async {
-    buildParameters(pSize: 1);
-    final objFuture = _mnContactDetailRelation!.toList(qparams);
-    final data = await objFuture;
-    ContactDetailRelation? obj;
-    if (data.isNotEmpty) {
-      obj = ContactDetailRelation.fromMap(data[0] as Map<String, dynamic>);
-
-      // RELATIONSHIPS PRELOAD
-      if (preload || loadParents) {
-        loadedFields = loadedFields ?? [];
-        if ((preloadFields == null ||
-            loadParents ||
-            preloadFields.contains('plContactDetail'))) {
-          obj.plContactDetail = obj.plContactDetail ??
-              await obj.getContactDetail(loadParents: loadParents);
-        }
-        if ((preloadFields == null ||
-            loadParents ||
-            preloadFields.contains('plContactDetailByContactDetailId2'))) {
-          obj.plContactDetailByContactDetailId2 =
-              obj.plContactDetailByContactDetailId2 ??
-                  await obj.getContactDetailByContactDetailId2(
-                      loadParents: loadParents);
-        }
-      } // END RELATIONSHIPS PRELOAD
-    } else {
-      obj = null;
-    }
-    return obj;
-  }
-
-  /// This method always returns [ContactDetailRelation]
-  /// bool preload: if true, loads all related child objects (Set preload to true if you want to load all fields related to child or parent)
-  /// ex: toSingle(preload:true) -> Loads all related objects
-  /// List<String> preloadFields: specify the fields you want to preload (preload parameter's value should also be "true")
-  /// ex: toSingle(preload:true, preloadFields:['plField1','plField2'... etc])  -> Loads only certain fields what you specified
-  /// bool loadParents: if true, loads all parent objects until the object has no parent
-
-  /// <returns> ContactDetailRelation?
-  @override
-  Future<ContactDetailRelation> toSingleOrDefault(
-      {bool preload = false,
-      List<String>? preloadFields,
-      bool loadParents = false,
-      List<String>? loadedFields}) async {
-    return await toSingle(
-            preload: preload,
-            preloadFields: preloadFields,
-            loadParents: loadParents,
-            loadedFields: loadedFields) ??
-        ContactDetailRelation();
-  }
-
-  /// This method returns int. [ContactDetailRelation]
-  /// <returns>int
-  @override
-  Future<int> toCount(
-      [VoidCallback Function(int c)? contactdetailrelationCount]) async {
-    buildParameters();
-    qparams.selectColumns = ['COUNT(1) AS CNT'];
-    final contactdetailrelationsFuture =
-        await _mnContactDetailRelation!.toList(qparams);
-    final int count = contactdetailrelationsFuture[0]['CNT'] as int;
-    if (contactdetailrelationCount != null) {
-      contactdetailrelationCount(count);
-    }
-    return count;
-  }
-
-  /// This method returns List<ContactDetailRelation> [ContactDetailRelation]
-  /// bool preload: if true, loads all related child objects (Set preload to true if you want to load all fields related to child or parent)
-  /// ex: toList(preload:true) -> Loads all related objects
-  /// List<String> preloadFields: specify the fields you want to preload (preload parameter's value should also be "true")
-  /// ex: toList(preload:true, preloadFields:['plField1','plField2'... etc])  -> Loads only certain fields what you specified
-  /// bool loadParents: if true, loads all parent objects until the object has no parent
-
-  /// <returns>List<ContactDetailRelation>
-  @override
-  Future<List<ContactDetailRelation>> toList(
-      {bool preload = false,
-      List<String>? preloadFields,
-      bool loadParents = false,
-      List<String>? loadedFields}) async {
-    final data = await toMapList();
-    final List<ContactDetailRelation> contactdetailrelationsData =
-        await ContactDetailRelation.fromMapList(data,
-            preload: preload,
-            preloadFields: preloadFields,
-            loadParents: loadParents,
-            loadedFields: loadedFields,
-            setDefaultValues: qparams.selectColumns == null);
-    return contactdetailrelationsData;
-  }
-
-  /// This method returns Json String [ContactDetailRelation]
-  @override
-  Future<String> toJson() async {
-    final list = <dynamic>[];
-    final data = await toList();
-    for (var o in data) {
-      list.add(o.toMap(forJson: true));
-    }
-    return json.encode(list);
-  }
-
-  /// This method returns Json String. [ContactDetailRelation]
-  @override
-  Future<String> toJsonWithChilds() async {
-    final list = <dynamic>[];
-    final data = await toList();
-    for (var o in data) {
-      list.add(await o.toMapWithChildren(false, true));
-    }
-    return json.encode(list);
-  }
-
-  /// This method returns List<dynamic>. [ContactDetailRelation]
-  /// <returns>List<dynamic>
-  @override
-  Future<List<dynamic>> toMapList() async {
-    buildParameters();
-    return await _mnContactDetailRelation!.toList(qparams);
-  }
-
-  /// This method returns Primary Key List SQL and Parameters retVal = Map<String,dynamic>. [ContactDetailRelation]
-  /// retVal['sql'] = SQL statement string, retVal['args'] = whereArguments List<dynamic>;
-  /// <returns>List<String>
-  @override
-  Map<String, dynamic> toListPrimaryKeySQL([bool buildParams = true]) {
-    final Map<String, dynamic> _retVal = <String, dynamic>{};
-    if (buildParams) {
-      buildParameters();
-    }
-    _retVal['sql'] =
-        'SELECT `id` FROM ContactDetailRelation WHERE ${qparams.whereString}';
-    _retVal['args'] = qparams.whereArguments;
-    return _retVal;
-  }
-
-  /// This method returns Primary Key List<int>.
-  /// <returns>List<int>
-  @override
-  Future<List<int>> toListPrimaryKey([bool buildParams = true]) async {
-    if (buildParams) {
-      buildParameters();
-    }
-    final List<int> idData = <int>[];
-    qparams.selectColumns = ['id'];
-    final idFuture = await _mnContactDetailRelation!.toList(qparams);
-
-    final int count = idFuture.length;
-    for (int i = 0; i < count; i++) {
-      idData.add(idFuture[i]['id'] as int);
-    }
-    return idData;
-  }
-
-  /// Returns List<dynamic> for selected columns. Use this method for 'groupBy' with min,max,avg..  [ContactDetailRelation]
-  /// Sample usage: (see EXAMPLE 4.2 at https://github.com/hhtokpinar/sqfEntity#group-by)
-  @override
-  Future<List<dynamic>> toListObject() async {
-    buildParameters();
-
-    final objectFuture = _mnContactDetailRelation!.toList(qparams);
-
-    final List<dynamic> objectsData = <dynamic>[];
-    final data = await objectFuture;
-    final int count = data.length;
-    for (int i = 0; i < count; i++) {
-      objectsData.add(data[i]);
-    }
-    return objectsData;
-  }
-
-  /// Returns List<String> for selected first column
-  /// Sample usage: await ContactDetailRelation.select(columnsToSelect: ['columnName']).toListString()
-  @override
-  Future<List<String>> toListString(
-      [VoidCallback Function(List<String> o)? listString]) async {
-    buildParameters();
-
-    final objectFuture = _mnContactDetailRelation!.toList(qparams);
-
-    final List<String> objectsData = <String>[];
-    final data = await objectFuture;
-    final int count = data.length;
-    for (int i = 0; i < count; i++) {
-      objectsData.add(data[i][qparams.selectColumns![0]].toString());
-    }
-    if (listString != null) {
-      listString(objectsData);
-    }
-    return objectsData;
-  }
-}
-// endregion ContactDetailRelationFilterBuilder
-
-// region ContactDetailRelationFields
-class ContactDetailRelationFields {
-  static TableField? _fId;
-  static TableField get id {
-    return _fId = _fId ?? SqlSyntax.setField(_fId, 'id', DbType.integer);
-  }
-
-  static TableField? _fRelationName;
-  static TableField get relationName {
-    return _fRelationName = _fRelationName ??
-        SqlSyntax.setField(_fRelationName, 'relationName', DbType.text);
-  }
-
-  static TableField? _fContactDetailId1;
-  static TableField get contactDetailId1 {
-    return _fContactDetailId1 = _fContactDetailId1 ??
-        SqlSyntax.setField(
-            _fContactDetailId1, 'contactDetailId1', DbType.integer);
-  }
-
-  static TableField? _fContactDetailId2;
-  static TableField get contactDetailId2 {
-    return _fContactDetailId2 = _fContactDetailId2 ??
-        SqlSyntax.setField(
-            _fContactDetailId2, 'contactDetailId2', DbType.integer);
-  }
-}
-// endregion ContactDetailRelationFields
-
-//region ContactDetailRelationManager
-class ContactDetailRelationManager extends SqfEntityProvider {
-  ContactDetailRelationManager()
-      : super(Connect2DB(),
-            tableName: _tableName,
-            primaryKeyList: _primaryKeyList,
-            whereStr: _whereStr);
-  static const String _tableName = 'ContactDetailRelation';
-  static const List<String> _primaryKeyList = ['id'];
-  static const String _whereStr = 'id=?';
-}
-
-//endregion ContactDetailRelationManager
 class Connect2DBSequenceManager extends SqfEntityProvider {
   Connect2DBSequenceManager() : super(Connect2DB());
 }

@@ -12,6 +12,11 @@ const tableTag = SqfEntityTable(
   primaryKeyType: PrimaryKeyType.integer_auto_incremental,
   fields: [
     SqfEntityField('name', DbType.text),
+    SqfEntityFieldRelationship(
+        relationType: RelationType.MANY_TO_MANY,
+        parentTable: tableContactDetail,
+        deleteRule: DeleteRule.NO_ACTION,
+        manyToManyTableName: 'ContactDetailTag'),
   ],
 );
 
@@ -20,44 +25,7 @@ const tableContactDetail = SqfEntityTable(
   primaryKeyName: 'id',
   primaryKeyType: PrimaryKeyType.integer_auto_incremental,
   fields: [
-    SqfEntityField('contactId', DbType.text),
-  ],
-);
-
-const tableContactDetailTag = SqfEntityTable(
-  tableName: 'ContactDetailTag',
-  primaryKeyName: 'id',
-  primaryKeyType: PrimaryKeyType.integer_auto_incremental,
-  fields: [
-    SqfEntityFieldRelationship(
-      parentTable: tableContactDetail,
-      deleteRule: DeleteRule.CASCADE,
-      fieldName: 'contactDetailId',
-    ),
-    SqfEntityFieldRelationship(
-      parentTable: tableTag,
-      deleteRule: DeleteRule.CASCADE,
-      fieldName: 'tagId',
-    ),
-  ],
-);
-
-const tableContactDetailRelation = SqfEntityTable(
-  tableName: 'ContactDetailRelation',
-  primaryKeyName: 'id',
-  primaryKeyType: PrimaryKeyType.integer_auto_incremental,
-  fields: [
-    SqfEntityField('relationName', DbType.text),
-    SqfEntityFieldRelationship(
-      parentTable: tableContactDetail,
-      deleteRule: DeleteRule.CASCADE,
-      fieldName: 'contactDetailId1',
-    ),
-    SqfEntityFieldRelationship(
-      parentTable: tableContactDetail,
-      deleteRule: DeleteRule.CASCADE,
-      fieldName: 'contactDetailId2',
-    ),
+    SqfEntityField('phoneContactId', DbType.text),
   ],
 );
 
@@ -68,8 +36,6 @@ const connect2DatabaseModel = SqfEntityModel(
   databaseTables: [
     tableTag,
     tableContactDetail,
-    tableContactDetailTag,
-    tableContactDetailRelation,
   ],
   sequences: [],
 );

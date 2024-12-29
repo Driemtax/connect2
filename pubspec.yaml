@@ -40,10 +40,10 @@ dependencies:
   image_picker: ^0.8.4+4
   flutter_contacts: ^1.1.9+2
   path: ^1.9.0
-  sqfentity: ^2.2.0+5
-  sqfentity_gen: ^2.2.0+5
   build_runner: ^2.3.3
   http: ^1.2.2
+  sqfentity_gen: ^2.5.0
+  sqfentity: ^2.5.0
 
 dev_dependencies:
   flutter_test:
