@@ -13,3 +13,11 @@ class ContactNotFoundException implements Exception {
   @override
   String toString() => 'ContactNotFoundException: $message';
 }
+
+class DatabaseErrorException implements Exception {
+  final String message;
+  DatabaseErrorException(this.message);
+
+  @override
+  String toString() => 'DatabaseErrorException: $message';
+}
