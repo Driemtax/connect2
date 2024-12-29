@@ -105,12 +105,8 @@ class TableContactRelation extends SqfEntityTableBase {
     // declare fields
     fields = [
       SqfEntityFieldBase('name', DbType.text),
-      SqfEntityFieldRelationshipBase(
-          TableContactDetail.getInstance, DeleteRule.CASCADE,
-          relationType: RelationType.ONE_TO_MANY, fieldName: 'from'),
-      SqfEntityFieldRelationshipBase(
-          TableContactDetail.getInstance, DeleteRule.CASCADE,
-          relationType: RelationType.ONE_TO_MANY, fieldName: 'to'),
+      SqfEntityFieldBase('from', DbType.integer, isNotNull: true),
+      SqfEntityFieldBase('to', DbType.integer, isNotNull: true),
     ];
     super.init();
   }
@@ -1075,40 +1071,6 @@ class ContactDetail extends TableBase {
         .and;
   }
 
-  /// to load children of items to this field, use preload parameter. Ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
-  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plContactRelations', 'plField2'..]) or so on..
-  List<ContactRelation>? plContactRelations;
-
-  /// get ContactRelation(s) filtered by id=from
-  ContactRelationFilterBuilder? getContactRelations(
-      {List<String>? columnsToSelect, bool? getIsDeleted}) {
-    if (id == null) {
-      return null;
-    }
-    return ContactRelation()
-        .select(columnsToSelect: columnsToSelect, getIsDeleted: getIsDeleted)
-        .from
-        .equals(id)
-        .and;
-  }
-
-  /// to load children of items to this field, use preload parameter. Ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
-  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plContactRelationsByto', 'plField2'..]) or so on..
-  List<ContactRelation>? plContactRelationsByto;
-
-  /// get ContactRelation(s) filtered by id=to
-  ContactRelationFilterBuilder? getContactRelationsByto(
-      {List<String>? columnsToSelect, bool? getIsDeleted}) {
-    if (id == null) {
-      return null;
-    }
-    return ContactRelation()
-        .select(columnsToSelect: columnsToSelect, getIsDeleted: getIsDeleted)
-        .to
-        .equals(id)
-        .and;
-  }
-
 // END COLLECTIONS & VIRTUALS (ContactDetail)
 
   static const bool _softDeleteActivated = false;
@@ -1148,12 +1110,6 @@ class ContactDetail extends TableBase {
     }
     if (!forQuery) {
       map['ContactNotes'] = await getContactNotes()!.toMapList();
-    }
-    if (!forQuery) {
-      map['ContactRelations'] = await getContactRelations()!.toMapList();
-    }
-    if (!forQuery) {
-      map['ContactRelations'] = await getContactRelations()!.toMapList();
     }
 // END COLLECTIONS (ContactDetail)
 
@@ -1250,28 +1206,6 @@ class ContactDetail extends TableBase {
                       preloadFields: preloadFields,
                       loadParents: false /*, loadedFields:_loadedFields*/);
         }
-        if (/*!_loadedfields!.contains('ContactDetail.plContactRelations') && */ (preloadFields ==
-                null ||
-            preloadFields.contains('plContactRelations'))) {
-          /*_loadedfields!.add('ContactDetail.plContactRelations'); */ obj
-                  .plContactRelations =
-              obj.plContactRelations ??
-                  await obj.getContactRelations()!.toList(
-                      preload: preload,
-                      preloadFields: preloadFields,
-                      loadParents: false /*, loadedFields:_loadedFields*/);
-        }
-        if (/*!_loadedfields!.contains('ContactDetail.plContactRelationsByto') && */ (preloadFields ==
-                null ||
-            preloadFields.contains('plContactRelationsByto'))) {
-          /*_loadedfields!.add('ContactDetail.plContactRelationsByto'); */ obj
-                  .plContactRelationsByto =
-              obj.plContactRelationsByto ??
-                  await obj.getContactRelationsByto()!.toList(
-                      preload: preload,
-                      preloadFields: preloadFields,
-                      loadParents: false /*, loadedFields:_loadedFields*/);
-        }
       } // END RELATIONSHIPS PRELOAD CHILD
 
       objList.add(obj);
@@ -1321,28 +1255,6 @@ class ContactDetail extends TableBase {
                   .plContactNotes =
               obj.plContactNotes ??
                   await obj.getContactNotes()!.toList(
-                      preload: preload,
-                      preloadFields: preloadFields,
-                      loadParents: false /*, loadedFields:_loadedFields*/);
-        }
-        if (/*!_loadedfields!.contains('ContactDetail.plContactRelations') && */ (preloadFields ==
-                null ||
-            preloadFields.contains('plContactRelations'))) {
-          /*_loadedfields!.add('ContactDetail.plContactRelations'); */ obj
-                  .plContactRelations =
-              obj.plContactRelations ??
-                  await obj.getContactRelations()!.toList(
-                      preload: preload,
-                      preloadFields: preloadFields,
-                      loadParents: false /*, loadedFields:_loadedFields*/);
-        }
-        if (/*!_loadedfields!.contains('ContactDetail.plContactRelationsByto') && */ (preloadFields ==
-                null ||
-            preloadFields.contains('plContactRelationsByto'))) {
-          /*_loadedfields!.add('ContactDetail.plContactRelationsByto'); */ obj
-                  .plContactRelationsByto =
-              obj.plContactRelationsByto ??
-                  await obj.getContactRelationsByto()!.toList(
                       preload: preload,
                       preloadFields: preloadFields,
                       loadParents: false /*, loadedFields:_loadedFields*/);
@@ -1475,24 +1387,6 @@ class ContactDetail extends TableBase {
           .equals(id)
           .and
           .delete(hardDelete);
-    }
-    if (!result.success) {
-      return result;
-    }
-    {
-      result = await ContactRelation()
-          .select()
-          .from
-          .equals(id)
-          .and
-          .delete(hardDelete);
-    }
-    if (!result.success) {
-      return result;
-    }
-    {
-      result =
-          await ContactRelation().select().to.equals(id).and.delete(hardDelete);
     }
     if (!result.success) {
       return result;
@@ -1768,26 +1662,6 @@ class ContactDetailFilterBuilder extends ConjunctionBase {
     if (!resContactNoteBYContactDetailId.success) {
       return resContactNoteBYContactDetailId;
     }
-// Delete sub records where in (ContactRelation) according to DeleteRule.CASCADE
-    final idListContactRelationBYfrom = toListPrimaryKeySQL(false);
-    final resContactRelationBYfrom = await ContactRelation()
-        .select()
-        .where('from IN (${idListContactRelationBYfrom['sql']})',
-            parameterValue: idListContactRelationBYfrom['args'])
-        .delete(hardDelete);
-    if (!resContactRelationBYfrom.success) {
-      return resContactRelationBYfrom;
-    }
-// Delete sub records where in (ContactRelation) according to DeleteRule.CASCADE
-    final idListContactRelationBYto = toListPrimaryKeySQL(false);
-    final resContactRelationBYto = await ContactRelation()
-        .select()
-        .where('to IN (${idListContactRelationBYto['sql']})',
-            parameterValue: idListContactRelationBYto['args'])
-        .delete(hardDelete);
-    if (!resContactRelationBYto.success) {
-      return resContactRelationBYto;
-    }
 
     if (_softDeleteActivated && !hardDelete) {
       r = await _mnContactDetail!.updateBatch(qparams, {'isDeleted': 1});
@@ -1851,28 +1725,6 @@ class ContactDetailFilterBuilder extends ConjunctionBase {
                   .plContactNotes =
               obj.plContactNotes ??
                   await obj.getContactNotes()!.toList(
-                      preload: preload,
-                      preloadFields: preloadFields,
-                      loadParents: false /*, loadedFields:_loadedFields*/);
-        }
-        if (/*!_loadedfields!.contains('ContactDetail.plContactRelations') && */ (preloadFields ==
-                null ||
-            preloadFields.contains('plContactRelations'))) {
-          /*_loadedfields!.add('ContactDetail.plContactRelations'); */ obj
-                  .plContactRelations =
-              obj.plContactRelations ??
-                  await obj.getContactRelations()!.toList(
-                      preload: preload,
-                      preloadFields: preloadFields,
-                      loadParents: false /*, loadedFields:_loadedFields*/);
-        }
-        if (/*!_loadedfields!.contains('ContactDetail.plContactRelationsByto') && */ (preloadFields ==
-                null ||
-            preloadFields.contains('plContactRelationsByto'))) {
-          /*_loadedfields!.add('ContactDetail.plContactRelationsByto'); */ obj
-                  .plContactRelationsByto =
-              obj.plContactRelationsByto ??
-                  await obj.getContactRelationsByto()!.toList(
                       preload: preload,
                       preloadFields: preloadFields,
                       loadParents: false /*, loadedFields:_loadedFields*/);
@@ -3005,18 +2857,12 @@ class ContactRelation extends TableBase {
     if (o['name'] != null) {
       name = o['name'].toString();
     }
-    from = int.tryParse(o['from'].toString());
-
-    to = int.tryParse(o['to'].toString());
-
-    // RELATIONSHIPS FromMAP
-    plContactDetail = o['contactDetail'] != null
-        ? ContactDetail.fromMap(o['contactDetail'] as Map<String, dynamic>)
-        : null;
-    plContactDetailByTo = o['contactDetail'] != null
-        ? ContactDetail.fromMap(o['contactDetail'] as Map<String, dynamic>)
-        : null;
-    // END RELATIONSHIPS FromMAP
+    if (o['from'] != null) {
+      from = int.tryParse(o['from'].toString());
+    }
+    if (o['to'] != null) {
+      to = int.tryParse(o['to'].toString());
+    }
   }
   // FIELDS (ContactRelation)
   int? id;
@@ -3025,32 +2871,6 @@ class ContactRelation extends TableBase {
   int? to;
 
   // end FIELDS (ContactRelation)
-
-// RELATIONSHIPS (ContactRelation)
-  /// to load parent of items to this field, use preload parameter ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
-  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plContactDetail', 'plField2'..]) or so on..
-  ContactDetail? plContactDetail;
-
-  /// get ContactDetail By From
-  Future<ContactDetail?> getContactDetail(
-      {bool loadParents = false, List<String>? loadedFields}) async {
-    final _obj = await ContactDetail()
-        .getById(from, loadParents: loadParents, loadedFields: loadedFields);
-    return _obj;
-  }
-
-  /// to load parent of items to this field, use preload parameter ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
-  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plContactDetailByTo', 'plField2'..]) or so on..
-  ContactDetail? plContactDetailByTo;
-
-  /// get ContactDetail By To
-  Future<ContactDetail?> getContactDetailByTo(
-      {bool loadParents = false, List<String>? loadedFields}) async {
-    final _obj = await ContactDetail()
-        .getById(to, loadParents: loadParents, loadedFields: loadedFields);
-    return _obj;
-  }
-  // END RELATIONSHIPS (ContactRelation)
 
   static const bool _softDeleteActivated = false;
   ContactRelationManager? __mnContactRelation;
@@ -3069,23 +2889,11 @@ class ContactRelation extends TableBase {
     if (name != null || !forView) {
       map['name'] = name;
     }
-    if (from != null) {
-      map['from'] = forView
-          ? plContactDetail == null
-              ? from
-              : plContactDetail!.phoneContactId
-          : from;
-    } else if (from != null || !forView) {
-      map['from'] = null;
+    if (from != null || !forView) {
+      map['from'] = from;
     }
-    if (to != null) {
-      map['to'] = forView
-          ? plContactDetail == null
-              ? to
-              : plContactDetail!.phoneContactId
-          : to;
-    } else if (to != null || !forView) {
-      map['to'] = null;
+    if (to != null || !forView) {
+      map['to'] = to;
     }
 
     return map;
@@ -3101,23 +2909,11 @@ class ContactRelation extends TableBase {
     if (name != null || !forView) {
       map['name'] = name;
     }
-    if (from != null) {
-      map['from'] = forView
-          ? plContactDetail == null
-              ? from
-              : plContactDetail!.phoneContactId
-          : from;
-    } else if (from != null || !forView) {
-      map['from'] = null;
+    if (from != null || !forView) {
+      map['from'] = from;
     }
-    if (to != null) {
-      map['to'] = forView
-          ? plContactDetail == null
-              ? to
-              : plContactDetail!.phoneContactId
-          : to;
-    } else if (to != null || !forView) {
-      map['to'] = null;
+    if (to != null || !forView) {
+      map['to'] = to;
     }
 
     return map;
@@ -3187,24 +2983,6 @@ class ContactRelation extends TableBase {
     for (final map in data) {
       final obj = ContactRelation.fromMap(map as Map<String, dynamic>,
           setDefaultValues: setDefaultValues);
-      // final List<String> _loadedFields = List<String>.from(loadedFields);
-
-      // RELATIONSHIPS PRELOAD
-      if (preload || loadParents) {
-        loadedFields = loadedFields ?? [];
-        if ((preloadFields == null ||
-            loadParents ||
-            preloadFields.contains('plContactDetail'))) {
-          obj.plContactDetail = obj.plContactDetail ??
-              await obj.getContactDetail(loadParents: loadParents);
-        }
-        if ((preloadFields == null ||
-            loadParents ||
-            preloadFields.contains('plContactDetailByTo'))) {
-          obj.plContactDetailByTo = obj.plContactDetailByTo ??
-              await obj.getContactDetailByTo(loadParents: loadParents);
-        }
-      } // END RELATIONSHIPS PRELOAD
 
       objList.add(obj);
     }
@@ -3232,23 +3010,6 @@ class ContactRelation extends TableBase {
     final data = await _mnContactRelation.getById([id]);
     if (data.length != 0) {
       obj = ContactRelation.fromMap(data[0] as Map<String, dynamic>);
-
-      // RELATIONSHIPS PRELOAD
-      if (preload || loadParents) {
-        loadedFields = loadedFields ?? [];
-        if ((preloadFields == null ||
-            loadParents ||
-            preloadFields.contains('plContactDetail'))) {
-          obj.plContactDetail = obj.plContactDetail ??
-              await obj.getContactDetail(loadParents: loadParents);
-        }
-        if ((preloadFields == null ||
-            loadParents ||
-            preloadFields.contains('plContactDetailByTo'))) {
-          obj.plContactDetailByTo = obj.plContactDetailByTo ??
-              await obj.getContactDetailByTo(loadParents: loadParents);
-        }
-      } // END RELATIONSHIPS PRELOAD
     } else {
       obj = null;
     }
@@ -3679,23 +3440,6 @@ class ContactRelationFilterBuilder extends ConjunctionBase {
     ContactRelation? obj;
     if (data.isNotEmpty) {
       obj = ContactRelation.fromMap(data[0] as Map<String, dynamic>);
-
-      // RELATIONSHIPS PRELOAD
-      if (preload || loadParents) {
-        loadedFields = loadedFields ?? [];
-        if ((preloadFields == null ||
-            loadParents ||
-            preloadFields.contains('plContactDetail'))) {
-          obj.plContactDetail = obj.plContactDetail ??
-              await obj.getContactDetail(loadParents: loadParents);
-        }
-        if ((preloadFields == null ||
-            loadParents ||
-            preloadFields.contains('plContactDetailByTo'))) {
-          obj.plContactDetailByTo = obj.plContactDetailByTo ??
-              await obj.getContactDetailByTo(loadParents: loadParents);
-        }
-      } // END RELATIONSHIPS PRELOAD
     } else {
       obj = null;
     }

@@ -37,11 +37,9 @@ class ContactService {
     List<ContactNote>? notes = await contactDetail.getContactNotes()?.toList();
     notes ??= [];
     List<ContactRelation>? outgoingContactRelations =
-        await contactDetail.getContactRelations()?.toList();
-    outgoingContactRelations ??= [];
+        await ContactRelation().select().from.equals(contactDetail.id).toList();
     List<ContactRelation>? incomingContactRelations =
-        await contactDetail.getContactRelationsByto()?.toList();
-    incomingContactRelations ??= [];
+        await ContactRelation().select().to.equals(contactDetail.id).toList();
     FullContact fullContact = FullContact(
       tags: tags,
       contactDetail: contactDetail,

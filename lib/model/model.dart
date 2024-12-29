@@ -50,18 +50,8 @@ const tableContactRelation = SqfEntityTable(
   primaryKeyType: PrimaryKeyType.integer_auto_incremental,
   fields: [
     SqfEntityField('name', DbType.text),
-    SqfEntityFieldRelationship(
-      fieldName: 'from',
-      // relationType: RelationType.ONE_TO_ONE,
-      parentTable: tableContactDetail,
-      deleteRule: DeleteRule.CASCADE,
-    ),
-    SqfEntityFieldRelationship(
-      fieldName: 'to',
-      // relationType: RelationType.ONE_TO_ONE,
-      parentTable: tableContactDetail,
-      deleteRule: DeleteRule.CASCADE, 
-    ),
+    SqfEntityField('from', DbType.integer, isNotNull: true),
+    SqfEntityField('to', DbType.integer, isNotNull: true)
   ],
 );
 
