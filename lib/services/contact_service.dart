@@ -7,9 +7,19 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 class ContactService {
   PhoneContactProvider phoneContactProvider = PhoneContactProvider();
 
-  /// Can be used for the list view
   Future<List<Contact>> getAll() async {
     List<Contact> contacts = await phoneContactProvider.getAll();
+    List<ContactDetail> contactDetails =
+        await ContactDetail().select().toList();
+    final contactDetailIds =
+        contactDetails.map((detail) => detail.phoneContactId).toSet();
+
+    final futures = contacts
+        .where((contact) => !contactDetailIds.contains(contact.id))
+        .map((contact) => ContactDetail(phoneContactId: contact.id).save());
+
+    await Future.wait(futures);
+
     return contacts;
   }
 
@@ -26,9 +36,11 @@ class ContactService {
     tags ??= [];
     List<ContactNote>? notes = await contactDetail.getContactNotes()?.toList();
     notes ??= [];
-    List<ContactRelation>? outgoingContactRelations = await contactDetail.getContactRelations()?.toList();
+    List<ContactRelation>? outgoingContactRelations =
+        await contactDetail.getContactRelations()?.toList();
     outgoingContactRelations ??= [];
-    List<ContactRelation>? incomingContactRelations = await contactDetail.getContactRelationsByto()?.toList();
+    List<ContactRelation>? incomingContactRelations =
+        await contactDetail.getContactRelationsByto()?.toList();
     incomingContactRelations ??= [];
     FullContact fullContact = FullContact(
       tags: tags,
