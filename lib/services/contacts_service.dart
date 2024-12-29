@@ -1,5 +1,6 @@
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:connect2/exceptions/exceptions.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 /// Retrieves a list of all contacts from the device's contact list.
@@ -84,4 +85,34 @@ Future<int> saveNewContact(Contact contact) async {
     throw PermissionDeniedException('Contact permissions were not granted.');
   }
   return int.parse(contact.id);
+}
+
+// Saves the id of the users own contact.
+///
+/// This method takes an id and stores it in the shared preferences. This function will only be called once.
+///
+/// - Parameter contactId: String, the contactId of the users own contact.
+Future<void> saveOwnContactId(String contactId) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('own_contact_id', contactId);
+}
+
+/// Gets the Id of the users own contact if one exists. Otherwise returns null
+Future<String?> getOwnContactId() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('own_contact_id');
+}
+
+/// Gets the contact object of the users own contact if one exists.
+Future<Contact?> getOwnContact() async {
+  final contactId = await getOwnContactId();
+  if (contactId != null) {
+    final contacts = await FlutterContacts.getContacts();
+    try {
+      return contacts.firstWhere((c) => c.id == contactId);
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
 }

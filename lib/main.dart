@@ -1,6 +1,6 @@
 import 'package:connect2/screens/graph_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:connect2/screens/person_card_view.dart';
+import 'package:connect2/screens/first_own_card.dart';
 import 'package:connect2/screens/home_view.dart';
 
 void main() {
@@ -37,6 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
   static final List<Widget> _widgetOptions = <Widget>[
     const HomeContent(), 
     const GraphScreen(),
+    const OwnContactView()
   ];
 
   void _onItemTapped(int index) {
@@ -76,12 +77,12 @@ class _MyHomePageState extends State<MyHomePage> {
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person),
-            label: 'Person View',
+            icon: Icon(Icons.network_cell),
+            label: 'Graph',
           ),
           NavigationDestination(
-            icon: Icon(Icons.notifications),
-            label: 'Notification',
+            icon: Icon(Icons.person),
+            label: 'Karte',
           ),
         ],
       ),

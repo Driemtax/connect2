@@ -4,30 +4,26 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:connect2/models/note.dart';
-import 'package:connect2/main.dart';
 
-class PersonCardView extends StatefulWidget {
+class OwnCardView extends StatefulWidget {
   final int contactId;
-  const PersonCardView({Key? key, required this.contactId}) : super(key: key);
+  const OwnCardView({Key? key, required this.contactId}) : super(key: key);
   @override
   // ignore: library_private_types_in_public_api
-  _PersonCardViewState createState() => _PersonCardViewState();
+  _OwnCardViewState createState() => _OwnCardViewState();
 }
 
-class _PersonCardViewState extends State<PersonCardView> {
+class _OwnCardViewState extends State<OwnCardView> {
   late int contactId;
   late ContactManager _contactManager;
   bool _isLoading = true;
   late TextEditingController _residenceController;
   late TextEditingController _employerController;
-  
+  // General Information
   String _name = "";
   DateTime? _birthDate;
   String _residence = "";
   String _employer = "";
-  // Notes
-  final List<Note> _noteList = [];
 
   // Skills
   final List<String> _skills = [];
@@ -50,7 +46,7 @@ class _PersonCardViewState extends State<PersonCardView> {
     _employerController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _initializeData() async {
     await _contactManager.loadContactFromDatabase();
     setState(() {
@@ -58,21 +54,10 @@ class _PersonCardViewState extends State<PersonCardView> {
       _birthDate = _contactManager.contactData["birthDate"];
       _residence = _contactManager.contactData["residence"] ?? "";
       _employer = _contactManager.contactData["employer"] ?? "";
-
-      // Controller
+      
+      // Set controller
       _residenceController = TextEditingController(text: _residence);
       _employerController = TextEditingController(text: _employer);
-
-      // Notes
-      _noteList.clear();
-      final List<Map<String, dynamic>> notesFromDb = _contactManager.contactData["notes"] ?? [];
-      for (var noteData in notesFromDb) {
-        _noteList.add(Note(
-          date: noteData["date"] ?? "",
-          text: noteData["text"] ?? "",
-        ));
-      }
-
 
       // Skills
       _skills.clear();
@@ -98,22 +83,7 @@ class _PersonCardViewState extends State<PersonCardView> {
       });
     }
   }
-
-  void _addNote(String newText) {
-    setState(() {
-      String formattedDate = DateFormat('dd.MM.yyyy').format(DateTime.now());
-      _noteList.add(Note(date: formattedDate, text: newText));
-      _contactManager.updateContactField('notes', _noteList.map((note) => note.toJson()).toList());
-    });
-  }
-
-  void _deleteNote(int index) {
-    setState(() {
-      _noteList.removeAt(index);
-      _contactManager.updateContactField('notes', _noteList.map((note) => note.toJson()).toList());
-    });
-  }
-
+  
   void _addSkill(String newSkill){
     setState(() {
       _skills.add(newSkill);
@@ -130,7 +100,7 @@ class _PersonCardViewState extends State<PersonCardView> {
 
   /// This method shows a pop up to create a new entry to a list. This is used for the skills and the notes.
   /// The input field is not allowed to be empty.
-  Future<void> _showAddItemDialog(Function(String) onAdd ) async {
+  Future<void> _showAddSkillDialog() async {
     String itemText = '';
     bool isError = false;
 
@@ -140,7 +110,7 @@ class _PersonCardViewState extends State<PersonCardView> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Neues Item hinzufügen'),
+              title: const Text('Neuen Skill hinzufügen'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -175,7 +145,7 @@ class _PersonCardViewState extends State<PersonCardView> {
                         isError = true;
                       });
                     } else {
-                      onAdd(itemText);
+                      _addSkill(itemText);
                       Navigator.of(context).pop();
                     }
                   },
@@ -289,21 +259,6 @@ class _PersonCardViewState extends State<PersonCardView> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kontakt'),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: const Color.fromRGBO(255, 255, 255, 1),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const MyApp()),
-              (Route<dynamic> route) => false,
-            );
-          },
-        ),
-      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -411,75 +366,10 @@ class _PersonCardViewState extends State<PersonCardView> {
                   const SizedBox(height: 16),
                 ],
                 floatingActionButton: FloatingActionButton.small(
-                  onPressed: () => _showAddItemDialog(_addSkill),
+                  onPressed: () => _showAddSkillDialog(),
                   backgroundColor: colorScheme.primaryContainer,
                   child: Icon(Icons.add, color: colorScheme.onPrimaryContainer),
                 ),
-              ),          
-
-              // Notizen
-              _buildInfoCard(
-                colorScheme,
-                'Notizen',
-                [
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _noteList.length,
-                    itemBuilder: (context, index) {
-                      final notiz = _noteList[index];
-                      return Dismissible(
-                        key: UniqueKey(),
-                        direction: DismissDirection.startToEnd,
-                        onDismissed: (direction) {
-                          _deleteNote(index);
-                        },
-                        background: Container(
-                          color: Colors.red,
-                          padding: const EdgeInsets.only(left: 16),
-                          alignment: Alignment.centerLeft,
-                          child: const Icon(Icons.delete, color: Colors.white),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                notiz.date,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              TextFormField(
-                                initialValue: notiz.text,
-                                readOnly: true,
-                                maxLines: null,
-                                style: TextStyle(color: colorScheme.onSurfaceVariant),
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: colorScheme.surfaceContainerHighest,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                floatingActionButton: 
-                  FloatingActionButton.small(
-                  onPressed: () => _showAddItemDialog(_addNote),
-                  backgroundColor: colorScheme.primaryContainer,
-                  child: Icon(Icons.add, color: colorScheme.onPrimaryContainer),
-                )
               ),
             ],
           ),

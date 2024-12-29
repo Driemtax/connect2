@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:connect2/services/contacts_service.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 
 class ContactManager {
@@ -26,7 +25,6 @@ class ContactManager {
   }
 
   Future<void> _saveContactToDatabase() async {
-    print("Speichere Kontakt in der Datenbank: $contactData");
     // TODO Update database here
     Contact updatedContact = Contact();
     updatedContact.id = contactId.toString();

@@ -3,6 +3,7 @@ import 'package:connect2/screens/person_card_view.dart';
 import 'package:connect2/services/contacts_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dummy_person.dart';
 
 // HomeContent Widget: Die scrollbare Liste
@@ -47,16 +48,23 @@ class HomeContentState extends State<HomeContent> {
               leading: const Icon(Icons.qr_code),
               title: const Text("QR-Code importieren"),
               onTap: () {
-                Navigator.pop(context); // Schließt das Menü
-                // Implementiere hier die Funktionalität für den QR-Code
+                Navigator.pop(context);
               },
             ),
             ListTile(
               leading: const Icon(Icons.create),
               title: const Text("Manuell erstellen"),
               onTap: () {
-                Navigator.pop(context); // Schließt das Menü
-                _showNameInputDialog(context); // Öffnet das Popup
+                Navigator.pop(context); 
+                _showNameInputDialog(context); 
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete),
+              title: const Text("Daten zurücksetzen"),
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
               },
             ),
           ],
