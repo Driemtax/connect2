@@ -71,10 +71,11 @@ class PhoneContactProvider {
   ///
   /// - Parameter contact: The `Contact` object to save as a new contact.
   /// - Throws: `PermissionDeniedException` if contact permissions are not granted.
-  Future<void> saveNew(Contact contact) async {
+  Future<Contact> saveNew(Contact contact) async {
     if (await FlutterContacts.requestPermission()) {
       try {
-        await FlutterContacts.insertContact(contact);
+        Contact newContact = await FlutterContacts.insertContact(contact);
+        return newContact;
       } catch (e) {
         throw Exception('Failed to save new contact: ${e.toString()}');
       }
