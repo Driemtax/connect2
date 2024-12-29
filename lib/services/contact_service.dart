@@ -24,8 +24,14 @@ class ContactService {
     contactDetail ??= await _createNewContactDetail(phoneContactId);
     List<Tag>? tags = await contactDetail.getTags()?.toList();
     tags ??= [];
+    List<ContactNote>? notes = await contactDetail.getContactNotes()?.toList();
+    notes ??= [];
     FullContact fullContact = FullContact(
-        tags: tags, contactDetail: contactDetail, phoneContact: phoneContact);
+      tags: tags,
+      contactDetail: contactDetail,
+      phoneContact: phoneContact,
+      notes: notes,
+    );
     return fullContact;
   }
 
@@ -41,9 +47,11 @@ class ContactService {
     ContactDetail newContactDetail =
         await _createNewContactDetail(newPhoneContact.id);
     FullContact newFullContact = FullContact(
-        tags: [],
-        contactDetail: newContactDetail,
-        phoneContact: newPhoneContact);
+      tags: [],
+      notes: [],
+      contactDetail: newContactDetail,
+      phoneContact: newPhoneContact,
+    );
     return newFullContact;
   }
 

@@ -65,6 +65,33 @@ class TableContactDetail extends SqfEntityTableBase {
   }
 }
 
+// ContactNote TABLE
+class TableContactNote extends SqfEntityTableBase {
+  TableContactNote() {
+    // declare properties of EntityTable
+    tableName = 'ContactNote';
+    primaryKeyName = 'id';
+    primaryKeyType = PrimaryKeyType.integer_auto_incremental;
+    useSoftDeleting = false;
+    // when useSoftDeleting is true, creates a field named 'isDeleted' on the table, and set to '1' this field when item deleted (does not hard delete)
+
+    // declare fields
+    fields = [
+      SqfEntityFieldBase('note', DbType.text),
+      SqfEntityFieldBase('date', DbType.datetime,
+          minValue: DateTime.parse('1900-01-01')),
+      SqfEntityFieldRelationshipBase(
+          TableContactDetail.getInstance, DeleteRule.CASCADE,
+          relationType: RelationType.ONE_TO_MANY, fieldName: 'ContactDetailId'),
+    ];
+    super.init();
+  }
+  static SqfEntityTableBase? _instance;
+  static SqfEntityTableBase get getInstance {
+    return _instance = _instance ?? TableContactNote();
+  }
+}
+
 // ContactDetailTag TABLE
 class TableContactDetailTag extends SqfEntityTableBase {
   TableContactDetailTag() {
@@ -110,6 +137,7 @@ class Connect2DB extends SqfEntityModelProvider {
     databaseTables = [
       TableTag.getInstance,
       TableContactDetail.getInstance,
+      TableContactNote.getInstance,
       TableContactDetailTag.getInstance,
     ];
 
@@ -1001,6 +1029,23 @@ class ContactDetail extends TableBase {
         .and;
   }
 
+  /// to load children of items to this field, use preload parameter. Ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
+  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plContactNotes', 'plField2'..]) or so on..
+  List<ContactNote>? plContactNotes;
+
+  /// get ContactNote(s) filtered by id=ContactDetailId
+  ContactNoteFilterBuilder? getContactNotes(
+      {List<String>? columnsToSelect, bool? getIsDeleted}) {
+    if (id == null) {
+      return null;
+    }
+    return ContactNote()
+        .select(columnsToSelect: columnsToSelect, getIsDeleted: getIsDeleted)
+        .ContactDetailId
+        .equals(id)
+        .and;
+  }
+
 // END COLLECTIONS & VIRTUALS (ContactDetail)
 
   static const bool _softDeleteActivated = false;
@@ -1037,6 +1082,9 @@ class ContactDetail extends TableBase {
 // COLLECTIONS (ContactDetail)
     if (!forQuery) {
       map['Tags'] = await getTags()!.toMapList();
+    }
+    if (!forQuery) {
+      map['ContactNotes'] = await getContactNotes()!.toMapList();
     }
 // END COLLECTIONS (ContactDetail)
 
@@ -1122,6 +1170,17 @@ class ContactDetail extends TableBase {
                       preloadFields: preloadFields,
                       loadParents: false /*, loadedFields:_loadedFields*/);
         }
+        if (/*!_loadedfields!.contains('ContactDetail.plContactNotes') && */ (preloadFields ==
+                null ||
+            preloadFields.contains('plContactNotes'))) {
+          /*_loadedfields!.add('ContactDetail.plContactNotes'); */ obj
+                  .plContactNotes =
+              obj.plContactNotes ??
+                  await obj.getContactNotes()!.toList(
+                      preload: preload,
+                      preloadFields: preloadFields,
+                      loadParents: false /*, loadedFields:_loadedFields*/);
+        }
       } // END RELATIONSHIPS PRELOAD CHILD
 
       objList.add(obj);
@@ -1160,6 +1219,17 @@ class ContactDetail extends TableBase {
           /*_loadedfields!.add('ContactDetail.plTags'); */ obj.plTags =
               obj.plTags ??
                   await obj.getTags()!.toList(
+                      preload: preload,
+                      preloadFields: preloadFields,
+                      loadParents: false /*, loadedFields:_loadedFields*/);
+        }
+        if (/*!_loadedfields!.contains('ContactDetail.plContactNotes') && */ (preloadFields ==
+                null ||
+            preloadFields.contains('plContactNotes'))) {
+          /*_loadedfields!.add('ContactDetail.plContactNotes'); */ obj
+                  .plContactNotes =
+              obj.plContactNotes ??
+                  await obj.getContactNotes()!.toList(
                       preload: preload,
                       preloadFields: preloadFields,
                       loadParents: false /*, loadedFields:_loadedFields*/);
@@ -1284,6 +1354,18 @@ class ContactDetail extends TableBase {
   @override
   Future<BoolResult> delete([bool hardDelete = false]) async {
     debugPrint('SQFENTITIY: delete ContactDetail invoked (id=$id)');
+    var result = BoolResult(success: false);
+    {
+      result = await ContactNote()
+          .select()
+          .ContactDetailId
+          .equals(id)
+          .and
+          .delete(hardDelete);
+    }
+    if (!result.success) {
+      return result;
+    }
     if (!_softDeleteActivated || hardDelete) {
       return _mnContactDetail
           .delete(QueryParams(whereString: 'id=?', whereArguments: [id]));
@@ -1544,6 +1626,17 @@ class ContactDetailFilterBuilder extends ConjunctionBase {
   Future<BoolResult> delete([bool hardDelete = false]) async {
     buildParameters();
     var r = BoolResult(success: false);
+    // Delete sub records where in (ContactNote) according to DeleteRule.CASCADE
+    final idListContactNoteBYContactDetailId = toListPrimaryKeySQL(false);
+    final resContactNoteBYContactDetailId = await ContactNote()
+        .select()
+        .where(
+            'ContactDetailId IN (${idListContactNoteBYContactDetailId['sql']})',
+            parameterValue: idListContactNoteBYContactDetailId['args'])
+        .delete(hardDelete);
+    if (!resContactNoteBYContactDetailId.success) {
+      return resContactNoteBYContactDetailId;
+    }
 
     if (_softDeleteActivated && !hardDelete) {
       r = await _mnContactDetail!.updateBatch(qparams, {'isDeleted': 1});
@@ -1596,6 +1689,17 @@ class ContactDetailFilterBuilder extends ConjunctionBase {
           /*_loadedfields!.add('ContactDetail.plTags'); */ obj.plTags =
               obj.plTags ??
                   await obj.getTags()!.toList(
+                      preload: preload,
+                      preloadFields: preloadFields,
+                      loadParents: false /*, loadedFields:_loadedFields*/);
+        }
+        if (/*!_loadedfields!.contains('ContactDetail.plContactNotes') && */ (preloadFields ==
+                null ||
+            preloadFields.contains('plContactNotes'))) {
+          /*_loadedfields!.add('ContactDetail.plContactNotes'); */ obj
+                  .plContactNotes =
+              obj.plContactNotes ??
+                  await obj.getContactNotes()!.toList(
                       preload: preload,
                       preloadFields: preloadFields,
                       loadParents: false /*, loadedFields:_loadedFields*/);
@@ -1800,6 +1904,912 @@ class ContactDetailManager extends SqfEntityProvider {
 }
 
 //endregion ContactDetailManager
+// region ContactNote
+class ContactNote extends TableBase {
+  ContactNote({this.id, this.note, this.date, this.ContactDetailId}) {
+    _setDefaultValues();
+    softDeleteActivated = false;
+  }
+  ContactNote.withFields(this.note, this.date, this.ContactDetailId) {
+    _setDefaultValues();
+  }
+  ContactNote.withId(this.id, this.note, this.date, this.ContactDetailId) {
+    _setDefaultValues();
+  }
+  // fromMap v2.0
+  ContactNote.fromMap(Map<String, dynamic> o, {bool setDefaultValues = true}) {
+    if (setDefaultValues) {
+      _setDefaultValues();
+    }
+    id = int.tryParse(o['id'].toString());
+    if (o['note'] != null) {
+      note = o['note'].toString();
+    }
+    if (o['date'] != null) {
+      date = int.tryParse(o['date'].toString()) != null
+          ? DateTime.fromMillisecondsSinceEpoch(
+              int.tryParse(o['date'].toString())!)
+          : DateTime.tryParse(o['date'].toString());
+    }
+    ContactDetailId = int.tryParse(o['ContactDetailId'].toString());
+
+    // RELATIONSHIPS FromMAP
+    plContactDetail = o['contactDetail'] != null
+        ? ContactDetail.fromMap(o['contactDetail'] as Map<String, dynamic>)
+        : null;
+    // END RELATIONSHIPS FromMAP
+  }
+  // FIELDS (ContactNote)
+  int? id;
+  String? note;
+  DateTime? date;
+  int? ContactDetailId;
+
+  // end FIELDS (ContactNote)
+
+// RELATIONSHIPS (ContactNote)
+  /// to load parent of items to this field, use preload parameter ex: toList(preload:true) or toSingle(preload:true) or getById(preload:true)
+  /// You can also specify this object into certain preload fields!. Ex: toList(preload:true, preloadFields:['plContactDetail', 'plField2'..]) or so on..
+  ContactDetail? plContactDetail;
+
+  /// get ContactDetail By ContactDetailId
+  Future<ContactDetail?> getContactDetail(
+      {bool loadParents = false, List<String>? loadedFields}) async {
+    final _obj = await ContactDetail().getById(ContactDetailId,
+        loadParents: loadParents, loadedFields: loadedFields);
+    return _obj;
+  }
+  // END RELATIONSHIPS (ContactNote)
+
+  static const bool _softDeleteActivated = false;
+  ContactNoteManager? __mnContactNote;
+
+  ContactNoteManager get _mnContactNote {
+    return __mnContactNote = __mnContactNote ?? ContactNoteManager();
+  }
+
+  // METHODS
+  @override
+  Map<String, dynamic> toMap(
+      {bool forQuery = false, bool forJson = false, bool forView = false}) {
+    final map = <String, dynamic>{};
+    map['id'] = id;
+    if (note != null || !forView) {
+      map['note'] = note;
+    }
+    if (date != null) {
+      map['date'] = forJson
+          ? date!.toString()
+          : forQuery
+              ? date!.millisecondsSinceEpoch
+              : date;
+    } else if (date != null || !forView) {
+      map['date'] = null;
+    }
+    if (ContactDetailId != null) {
+      map['ContactDetailId'] = forView
+          ? plContactDetail == null
+              ? ContactDetailId
+              : plContactDetail!.phoneContactId
+          : ContactDetailId;
+    } else if (ContactDetailId != null || !forView) {
+      map['ContactDetailId'] = null;
+    }
+
+    return map;
+  }
+
+  @override
+  Future<Map<String, dynamic>> toMapWithChildren(
+      [bool forQuery = false,
+      bool forJson = false,
+      bool forView = false]) async {
+    final map = <String, dynamic>{};
+    map['id'] = id;
+    if (note != null || !forView) {
+      map['note'] = note;
+    }
+    if (date != null) {
+      map['date'] = forJson
+          ? date!.toString()
+          : forQuery
+              ? date!.millisecondsSinceEpoch
+              : date;
+    } else if (date != null || !forView) {
+      map['date'] = null;
+    }
+    if (ContactDetailId != null) {
+      map['ContactDetailId'] = forView
+          ? plContactDetail == null
+              ? ContactDetailId
+              : plContactDetail!.phoneContactId
+          : ContactDetailId;
+    } else if (ContactDetailId != null || !forView) {
+      map['ContactDetailId'] = null;
+    }
+
+    return map;
+  }
+
+  /// This method returns Json String [ContactNote]
+  @override
+  String toJson() {
+    return json.encode(toMap(forJson: true));
+  }
+
+  /// This method returns Json String [ContactNote]
+  @override
+  Future<String> toJsonWithChilds() async {
+    return json.encode(await toMapWithChildren(false, true));
+  }
+
+  @override
+  List<dynamic> toArgs() {
+    return [
+      note,
+      date != null ? date!.millisecondsSinceEpoch : null,
+      ContactDetailId
+    ];
+  }
+
+  @override
+  List<dynamic> toArgsWithIds() {
+    return [
+      id,
+      note,
+      date != null ? date!.millisecondsSinceEpoch : null,
+      ContactDetailId
+    ];
+  }
+
+  static Future<List<ContactNote>?> fromWebUrl(Uri uri,
+      {Map<String, String>? headers}) async {
+    try {
+      final response = await http.get(uri, headers: headers);
+      return await fromJson(response.body);
+    } catch (e) {
+      debugPrint(
+          'SQFENTITY ERROR ContactNote.fromWebUrl: ErrorMessage: ${e.toString()}');
+      return null;
+    }
+  }
+
+  Future<http.Response> postUrl(Uri uri, {Map<String, String>? headers}) {
+    return http.post(uri, headers: headers, body: toJson());
+  }
+
+  static Future<List<ContactNote>> fromJson(String jsonBody) async {
+    final Iterable list = await json.decode(jsonBody) as Iterable;
+    var objList = <ContactNote>[];
+    try {
+      objList = list
+          .map((contactnote) =>
+              ContactNote.fromMap(contactnote as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      debugPrint(
+          'SQFENTITY ERROR ContactNote.fromJson: ErrorMessage: ${e.toString()}');
+    }
+    return objList;
+  }
+
+  static Future<List<ContactNote>> fromMapList(List<dynamic> data,
+      {bool preload = false,
+      List<String>? preloadFields,
+      bool loadParents = false,
+      List<String>? loadedFields,
+      bool setDefaultValues = true}) async {
+    final List<ContactNote> objList = <ContactNote>[];
+    loadedFields = loadedFields ?? [];
+    for (final map in data) {
+      final obj = ContactNote.fromMap(map as Map<String, dynamic>,
+          setDefaultValues: setDefaultValues);
+      // final List<String> _loadedFields = List<String>.from(loadedFields);
+
+      // RELATIONSHIPS PRELOAD
+      if (preload || loadParents) {
+        loadedFields = loadedFields ?? [];
+        if ((preloadFields == null ||
+            loadParents ||
+            preloadFields.contains('plContactDetail'))) {
+          obj.plContactDetail = obj.plContactDetail ??
+              await obj.getContactDetail(loadParents: loadParents);
+        }
+      } // END RELATIONSHIPS PRELOAD
+
+      objList.add(obj);
+    }
+    return objList;
+  }
+
+  /// returns ContactNote by ID if exist, otherwise returns null
+  /// Primary Keys: int? id
+  /// bool preload: if true, loads all related child objects (Set preload to true if you want to load all fields related to child or parent)
+  /// ex: getById(preload:true) -> Loads all related objects
+  /// List<String> preloadFields: specify the fields you want to preload (preload parameter's value should also be "true")
+  /// ex: getById(preload:true, preloadFields:['plField1','plField2'... etc])  -> Loads only certain fields what you specified
+  /// bool loadParents: if true, loads all parent objects until the object has no parent
+
+  /// <returns>returns [ContactNote] if exist, otherwise returns null
+  Future<ContactNote?> getById(int? id,
+      {bool preload = false,
+      List<String>? preloadFields,
+      bool loadParents = false,
+      List<String>? loadedFields}) async {
+    if (id == null) {
+      return null;
+    }
+    ContactNote? obj;
+    final data = await _mnContactNote.getById([id]);
+    if (data.length != 0) {
+      obj = ContactNote.fromMap(data[0] as Map<String, dynamic>);
+
+      // RELATIONSHIPS PRELOAD
+      if (preload || loadParents) {
+        loadedFields = loadedFields ?? [];
+        if ((preloadFields == null ||
+            loadParents ||
+            preloadFields.contains('plContactDetail'))) {
+          obj.plContactDetail = obj.plContactDetail ??
+              await obj.getContactDetail(loadParents: loadParents);
+        }
+      } // END RELATIONSHIPS PRELOAD
+    } else {
+      obj = null;
+    }
+    return obj;
+  }
+
+  /// Saves the (ContactNote) object. If the id field is null, saves as a new record and returns new id, if id is not null then updates record
+  /// ignoreBatch = true as a default. Set ignoreBatch to false if you run more than one save() operation those are between batchStart and batchCommit
+  /// <returns>Returns id
+  @override
+  Future<int?> save({bool ignoreBatch = true}) async {
+    if (id == null || id == 0) {
+      id = await _mnContactNote.insert(this, ignoreBatch);
+    } else {
+      await _mnContactNote.update(this);
+    }
+
+    return id;
+  }
+
+  /// Saves the (ContactNote) object. If the id field is null, saves as a new record and returns new id, if id is not null then updates record
+  /// ignoreBatch = true as a default. Set ignoreBatch to false if you run more than one save() operation those are between batchStart and batchCommit
+  /// <returns>Returns id
+  @override
+  Future<int?> saveOrThrow({bool ignoreBatch = true}) async {
+    if (id == null || id == 0) {
+      id = await _mnContactNote.insertOrThrow(this, ignoreBatch);
+
+      isInsert = true;
+    } else {
+      // id= await _upsert(); // removed in sqfentity_gen 1.3.0+6
+      await _mnContactNote.updateOrThrow(this);
+    }
+
+    return id;
+  }
+
+  /// saveAs ContactNote. Returns a new Primary Key value of ContactNote
+
+  /// <returns>Returns a new Primary Key value of ContactNote
+  @override
+  Future<int?> saveAs({bool ignoreBatch = true}) async {
+    id = null;
+
+    return save(ignoreBatch: ignoreBatch);
+  }
+
+  /// saveAll method saves the sent List<ContactNote> as a bulk in one transaction
+  /// Returns a <List<BoolResult>>
+  static Future<List<dynamic>> saveAll(List<ContactNote> contactnotes,
+      {bool? exclusive, bool? noResult, bool? continueOnError}) async {
+    List<dynamic>? result = [];
+    // If there is no open transaction, start one
+    final isStartedBatch = await Connect2DB().batchStart();
+    for (final obj in contactnotes) {
+      await obj.save(ignoreBatch: false);
+    }
+    if (!isStartedBatch) {
+      result = await Connect2DB().batchCommit(
+          exclusive: exclusive,
+          noResult: noResult,
+          continueOnError: continueOnError);
+      for (int i = 0; i < contactnotes.length; i++) {
+        if (contactnotes[i].id == null) {
+          contactnotes[i].id = result![i] as int;
+        }
+      }
+    }
+    return result!;
+  }
+
+  /// Updates if the record exists, otherwise adds a new row
+  /// <returns>Returns id
+  @override
+  Future<int?> upsert({bool ignoreBatch = true}) async {
+    try {
+      final result = await _mnContactNote.rawInsert(
+          'INSERT OR REPLACE INTO ContactNote (id, note, date, ContactDetailId)  VALUES (?,?,?,?)',
+          [
+            id,
+            note,
+            date != null ? date!.millisecondsSinceEpoch : null,
+            ContactDetailId
+          ],
+          ignoreBatch);
+      if (result! > 0) {
+        saveResult = BoolResult(
+            success: true,
+            successMessage: 'ContactNote id=$id updated successfully');
+      } else {
+        saveResult = BoolResult(
+            success: false, errorMessage: 'ContactNote id=$id did not update');
+      }
+      return id;
+    } catch (e) {
+      saveResult = BoolResult(
+          success: false,
+          errorMessage: 'ContactNote Save failed. Error: ${e.toString()}');
+      return null;
+    }
+  }
+
+  /// inserts or replaces the sent List<<ContactNote>> as a bulk in one transaction.
+  /// upsertAll() method is faster then saveAll() method. upsertAll() should be used when you are sure that the primary key is greater than zero
+  /// Returns a BoolCommitResult
+  @override
+  Future<BoolCommitResult> upsertAll(List<ContactNote> contactnotes,
+      {bool? exclusive, bool? noResult, bool? continueOnError}) async {
+    final results = await _mnContactNote.rawInsertAll(
+        'INSERT OR REPLACE INTO ContactNote (id, note, date, ContactDetailId)  VALUES (?,?,?,?)',
+        contactnotes,
+        exclusive: exclusive,
+        noResult: noResult,
+        continueOnError: continueOnError);
+    return results;
+  }
+
+  /// Deletes ContactNote
+
+  /// <returns>BoolResult res.success= true (Deleted), false (Could not be deleted)
+  @override
+  Future<BoolResult> delete([bool hardDelete = false]) async {
+    debugPrint('SQFENTITIY: delete ContactNote invoked (id=$id)');
+    if (!_softDeleteActivated || hardDelete) {
+      return _mnContactNote
+          .delete(QueryParams(whereString: 'id=?', whereArguments: [id]));
+    } else {
+      return _mnContactNote.updateBatch(
+          QueryParams(whereString: 'id=?', whereArguments: [id]),
+          {'isDeleted': 1});
+    }
+  }
+
+  @override
+  Future<BoolResult> recover([bool recoverChilds = true]) {
+    // not implemented because:
+    final msg =
+        'set useSoftDeleting:true in the table definition of [ContactNote] to use this feature';
+    throw UnimplementedError(msg);
+  }
+
+  @override
+  ContactNoteFilterBuilder select(
+      {List<String>? columnsToSelect, bool? getIsDeleted}) {
+    return ContactNoteFilterBuilder(this, getIsDeleted)
+      ..qparams.selectColumns = columnsToSelect;
+  }
+
+  @override
+  ContactNoteFilterBuilder distinct(
+      {List<String>? columnsToSelect, bool? getIsDeleted}) {
+    return ContactNoteFilterBuilder(this, getIsDeleted)
+      ..qparams.selectColumns = columnsToSelect
+      ..qparams.distinct = true;
+  }
+
+  void _setDefaultValues() {}
+
+  @override
+  void rollbackPk() {
+    if (isInsert == true) {
+      id = null;
+    }
+  }
+
+  // END METHODS
+  // BEGIN CUSTOM CODE
+  /*
+      you can define customCode property of your SqfEntityTable constant. For example:
+      const tablePerson = SqfEntityTable(
+      tableName: 'person',
+      primaryKeyName: 'id',
+      primaryKeyType: PrimaryKeyType.integer_auto_incremental,
+      fields: [
+        SqfEntityField('firstName', DbType.text),
+        SqfEntityField('lastName', DbType.text),
+      ],
+      customCode: '''
+       String fullName()
+       { 
+         return '$firstName $lastName';
+       }
+      ''');
+     */
+  // END CUSTOM CODE
+}
+// endregion contactnote
+
+// region ContactNoteField
+class ContactNoteField extends FilterBase {
+  ContactNoteField(ContactNoteFilterBuilder contactnoteFB)
+      : super(contactnoteFB);
+
+  @override
+  ContactNoteFilterBuilder equals(dynamic pValue) {
+    return super.equals(pValue) as ContactNoteFilterBuilder;
+  }
+
+  @override
+  ContactNoteFilterBuilder equalsOrNull(dynamic pValue) {
+    return super.equalsOrNull(pValue) as ContactNoteFilterBuilder;
+  }
+
+  @override
+  ContactNoteFilterBuilder isNull() {
+    return super.isNull() as ContactNoteFilterBuilder;
+  }
+
+  @override
+  ContactNoteFilterBuilder contains(dynamic pValue) {
+    return super.contains(pValue) as ContactNoteFilterBuilder;
+  }
+
+  @override
+  ContactNoteFilterBuilder startsWith(dynamic pValue) {
+    return super.startsWith(pValue) as ContactNoteFilterBuilder;
+  }
+
+  @override
+  ContactNoteFilterBuilder endsWith(dynamic pValue) {
+    return super.endsWith(pValue) as ContactNoteFilterBuilder;
+  }
+
+  @override
+  ContactNoteFilterBuilder between(dynamic pFirst, dynamic pLast) {
+    return super.between(pFirst, pLast) as ContactNoteFilterBuilder;
+  }
+
+  @override
+  ContactNoteFilterBuilder greaterThan(dynamic pValue) {
+    return super.greaterThan(pValue) as ContactNoteFilterBuilder;
+  }
+
+  @override
+  ContactNoteFilterBuilder lessThan(dynamic pValue) {
+    return super.lessThan(pValue) as ContactNoteFilterBuilder;
+  }
+
+  @override
+  ContactNoteFilterBuilder greaterThanOrEquals(dynamic pValue) {
+    return super.greaterThanOrEquals(pValue) as ContactNoteFilterBuilder;
+  }
+
+  @override
+  ContactNoteFilterBuilder lessThanOrEquals(dynamic pValue) {
+    return super.lessThanOrEquals(pValue) as ContactNoteFilterBuilder;
+  }
+
+  @override
+  ContactNoteFilterBuilder inValues(dynamic pValue) {
+    return super.inValues(pValue) as ContactNoteFilterBuilder;
+  }
+
+  @override
+  ContactNoteField get not {
+    return super.not as ContactNoteField;
+  }
+}
+// endregion ContactNoteField
+
+// region ContactNoteFilterBuilder
+class ContactNoteFilterBuilder extends ConjunctionBase {
+  ContactNoteFilterBuilder(ContactNote obj, bool? getIsDeleted)
+      : super(obj, getIsDeleted) {
+    _mnContactNote = obj._mnContactNote;
+    _softDeleteActivated = obj.softDeleteActivated;
+  }
+
+  bool _softDeleteActivated = false;
+  ContactNoteManager? _mnContactNote;
+
+  /// put the sql keyword 'AND'
+  @override
+  ContactNoteFilterBuilder get and {
+    super.and;
+    return this;
+  }
+
+  /// put the sql keyword 'OR'
+  @override
+  ContactNoteFilterBuilder get or {
+    super.or;
+    return this;
+  }
+
+  /// open parentheses
+  @override
+  ContactNoteFilterBuilder get startBlock {
+    super.startBlock;
+    return this;
+  }
+
+  /// String whereCriteria, write raw query without 'where' keyword. Like this: 'field1 like 'test%' and field2 = 3'
+  @override
+  ContactNoteFilterBuilder where(String? whereCriteria,
+      {dynamic parameterValue}) {
+    super.where(whereCriteria, parameterValue: parameterValue);
+    return this;
+  }
+
+  /// page = page number,
+  /// pagesize = row(s) per page
+  @override
+  ContactNoteFilterBuilder page(int page, int pagesize) {
+    super.page(page, pagesize);
+    return this;
+  }
+
+  /// int count = LIMIT
+  @override
+  ContactNoteFilterBuilder top(int count) {
+    super.top(count);
+    return this;
+  }
+
+  /// close parentheses
+  @override
+  ContactNoteFilterBuilder get endBlock {
+    super.endBlock;
+    return this;
+  }
+
+  /// argFields might be String or List<String>.
+  /// Example 1: argFields='name, date'
+  /// Example 2: argFields = ['name', 'date']
+  @override
+  ContactNoteFilterBuilder orderBy(dynamic argFields) {
+    super.orderBy(argFields);
+    return this;
+  }
+
+  /// argFields might be String or List<String>.
+  /// Example 1: argFields='field1, field2'
+  /// Example 2: argFields = ['field1', 'field2']
+  @override
+  ContactNoteFilterBuilder orderByDesc(dynamic argFields) {
+    super.orderByDesc(argFields);
+    return this;
+  }
+
+  /// argFields might be String or List<String>.
+  /// Example 1: argFields='field1, field2'
+  /// Example 2: argFields = ['field1', 'field2']
+  @override
+  ContactNoteFilterBuilder groupBy(dynamic argFields) {
+    super.groupBy(argFields);
+    return this;
+  }
+
+  /// argFields might be String or List<String>.
+  /// Example 1: argFields='name, date'
+  /// Example 2: argFields = ['name', 'date']
+  @override
+  ContactNoteFilterBuilder having(dynamic argFields) {
+    super.having(argFields);
+    return this;
+  }
+
+  ContactNoteField _setField(
+      ContactNoteField? field, String colName, DbType dbtype) {
+    return ContactNoteField(this)
+      ..param = DbParameter(
+          dbType: dbtype, columnName: colName, wStartBlock: openedBlock);
+  }
+
+  ContactNoteField? _id;
+  ContactNoteField get id {
+    return _id = _setField(_id, 'id', DbType.integer);
+  }
+
+  ContactNoteField? _note;
+  ContactNoteField get note {
+    return _note = _setField(_note, 'note', DbType.text);
+  }
+
+  ContactNoteField? _date;
+  ContactNoteField get date {
+    return _date = _setField(_date, 'date', DbType.datetime);
+  }
+
+  ContactNoteField? _ContactDetailId;
+  ContactNoteField get ContactDetailId {
+    return _ContactDetailId =
+        _setField(_ContactDetailId, 'ContactDetailId', DbType.integer);
+  }
+
+  /// Deletes List<ContactNote> bulk by query
+  ///
+  /// <returns>BoolResult res.success= true (Deleted), false (Could not be deleted)
+  @override
+  Future<BoolResult> delete([bool hardDelete = false]) async {
+    buildParameters();
+    var r = BoolResult(success: false);
+
+    if (_softDeleteActivated && !hardDelete) {
+      r = await _mnContactNote!.updateBatch(qparams, {'isDeleted': 1});
+    } else {
+      r = await _mnContactNote!.delete(qparams);
+    }
+    return r;
+  }
+
+  /// using:
+  /// update({'fieldName': Value})
+  /// fieldName must be String. Value is dynamic, it can be any of the (int, bool, String.. )
+  @override
+  Future<BoolResult> update(Map<String, dynamic> values) {
+    buildParameters();
+    if (qparams.limit! > 0 || qparams.offset! > 0) {
+      qparams.whereString =
+          'id IN (SELECT id from ContactNote ${qparams.whereString!.isNotEmpty ? 'WHERE ${qparams.whereString}' : ''}${qparams.limit! > 0 ? ' LIMIT ${qparams.limit}' : ''}${qparams.offset! > 0 ? ' OFFSET ${qparams.offset}' : ''})';
+    }
+    return _mnContactNote!.updateBatch(qparams, values);
+  }
+
+  /// This method always returns [ContactNote] Obj if exist, otherwise returns null
+  /// bool preload: if true, loads all related child objects (Set preload to true if you want to load all fields related to child or parent)
+  /// ex: toSingle(preload:true) -> Loads all related objects
+  /// List<String> preloadFields: specify the fields you want to preload (preload parameter's value should also be "true")
+  /// ex: toSingle(preload:true, preloadFields:['plField1','plField2'... etc])  -> Loads only certain fields what you specified
+  /// bool loadParents: if true, loads all parent objects until the object has no parent
+
+  /// <returns> ContactNote?
+  @override
+  Future<ContactNote?> toSingle(
+      {bool preload = false,
+      List<String>? preloadFields,
+      bool loadParents = false,
+      List<String>? loadedFields}) async {
+    buildParameters(pSize: 1);
+    final objFuture = _mnContactNote!.toList(qparams);
+    final data = await objFuture;
+    ContactNote? obj;
+    if (data.isNotEmpty) {
+      obj = ContactNote.fromMap(data[0] as Map<String, dynamic>);
+
+      // RELATIONSHIPS PRELOAD
+      if (preload || loadParents) {
+        loadedFields = loadedFields ?? [];
+        if ((preloadFields == null ||
+            loadParents ||
+            preloadFields.contains('plContactDetail'))) {
+          obj.plContactDetail = obj.plContactDetail ??
+              await obj.getContactDetail(loadParents: loadParents);
+        }
+      } // END RELATIONSHIPS PRELOAD
+    } else {
+      obj = null;
+    }
+    return obj;
+  }
+
+  /// This method always returns [ContactNote]
+  /// bool preload: if true, loads all related child objects (Set preload to true if you want to load all fields related to child or parent)
+  /// ex: toSingle(preload:true) -> Loads all related objects
+  /// List<String> preloadFields: specify the fields you want to preload (preload parameter's value should also be "true")
+  /// ex: toSingle(preload:true, preloadFields:['plField1','plField2'... etc])  -> Loads only certain fields what you specified
+  /// bool loadParents: if true, loads all parent objects until the object has no parent
+
+  /// <returns> ContactNote?
+  @override
+  Future<ContactNote> toSingleOrDefault(
+      {bool preload = false,
+      List<String>? preloadFields,
+      bool loadParents = false,
+      List<String>? loadedFields}) async {
+    return await toSingle(
+            preload: preload,
+            preloadFields: preloadFields,
+            loadParents: loadParents,
+            loadedFields: loadedFields) ??
+        ContactNote();
+  }
+
+  /// This method returns int. [ContactNote]
+  /// <returns>int
+  @override
+  Future<int> toCount([VoidCallback Function(int c)? contactnoteCount]) async {
+    buildParameters();
+    qparams.selectColumns = ['COUNT(1) AS CNT'];
+    final contactnotesFuture = await _mnContactNote!.toList(qparams);
+    final int count = contactnotesFuture[0]['CNT'] as int;
+    if (contactnoteCount != null) {
+      contactnoteCount(count);
+    }
+    return count;
+  }
+
+  /// This method returns List<ContactNote> [ContactNote]
+  /// bool preload: if true, loads all related child objects (Set preload to true if you want to load all fields related to child or parent)
+  /// ex: toList(preload:true) -> Loads all related objects
+  /// List<String> preloadFields: specify the fields you want to preload (preload parameter's value should also be "true")
+  /// ex: toList(preload:true, preloadFields:['plField1','plField2'... etc])  -> Loads only certain fields what you specified
+  /// bool loadParents: if true, loads all parent objects until the object has no parent
+
+  /// <returns>List<ContactNote>
+  @override
+  Future<List<ContactNote>> toList(
+      {bool preload = false,
+      List<String>? preloadFields,
+      bool loadParents = false,
+      List<String>? loadedFields}) async {
+    final data = await toMapList();
+    final List<ContactNote> contactnotesData = await ContactNote.fromMapList(
+        data,
+        preload: preload,
+        preloadFields: preloadFields,
+        loadParents: loadParents,
+        loadedFields: loadedFields,
+        setDefaultValues: qparams.selectColumns == null);
+    return contactnotesData;
+  }
+
+  /// This method returns Json String [ContactNote]
+  @override
+  Future<String> toJson() async {
+    final list = <dynamic>[];
+    final data = await toList();
+    for (var o in data) {
+      list.add(o.toMap(forJson: true));
+    }
+    return json.encode(list);
+  }
+
+  /// This method returns Json String. [ContactNote]
+  @override
+  Future<String> toJsonWithChilds() async {
+    final list = <dynamic>[];
+    final data = await toList();
+    for (var o in data) {
+      list.add(await o.toMapWithChildren(false, true));
+    }
+    return json.encode(list);
+  }
+
+  /// This method returns List<dynamic>. [ContactNote]
+  /// <returns>List<dynamic>
+  @override
+  Future<List<dynamic>> toMapList() async {
+    buildParameters();
+    return await _mnContactNote!.toList(qparams);
+  }
+
+  /// This method returns Primary Key List SQL and Parameters retVal = Map<String,dynamic>. [ContactNote]
+  /// retVal['sql'] = SQL statement string, retVal['args'] = whereArguments List<dynamic>;
+  /// <returns>List<String>
+  @override
+  Map<String, dynamic> toListPrimaryKeySQL([bool buildParams = true]) {
+    final Map<String, dynamic> _retVal = <String, dynamic>{};
+    if (buildParams) {
+      buildParameters();
+    }
+    _retVal['sql'] =
+        'SELECT `id` FROM ContactNote WHERE ${qparams.whereString}';
+    _retVal['args'] = qparams.whereArguments;
+    return _retVal;
+  }
+
+  /// This method returns Primary Key List<int>.
+  /// <returns>List<int>
+  @override
+  Future<List<int>> toListPrimaryKey([bool buildParams = true]) async {
+    if (buildParams) {
+      buildParameters();
+    }
+    final List<int> idData = <int>[];
+    qparams.selectColumns = ['id'];
+    final idFuture = await _mnContactNote!.toList(qparams);
+
+    final int count = idFuture.length;
+    for (int i = 0; i < count; i++) {
+      idData.add(idFuture[i]['id'] as int);
+    }
+    return idData;
+  }
+
+  /// Returns List<dynamic> for selected columns. Use this method for 'groupBy' with min,max,avg..  [ContactNote]
+  /// Sample usage: (see EXAMPLE 4.2 at https://github.com/hhtokpinar/sqfEntity#group-by)
+  @override
+  Future<List<dynamic>> toListObject() async {
+    buildParameters();
+
+    final objectFuture = _mnContactNote!.toList(qparams);
+
+    final List<dynamic> objectsData = <dynamic>[];
+    final data = await objectFuture;
+    final int count = data.length;
+    for (int i = 0; i < count; i++) {
+      objectsData.add(data[i]);
+    }
+    return objectsData;
+  }
+
+  /// Returns List<String> for selected first column
+  /// Sample usage: await ContactNote.select(columnsToSelect: ['columnName']).toListString()
+  @override
+  Future<List<String>> toListString(
+      [VoidCallback Function(List<String> o)? listString]) async {
+    buildParameters();
+
+    final objectFuture = _mnContactNote!.toList(qparams);
+
+    final List<String> objectsData = <String>[];
+    final data = await objectFuture;
+    final int count = data.length;
+    for (int i = 0; i < count; i++) {
+      objectsData.add(data[i][qparams.selectColumns![0]].toString());
+    }
+    if (listString != null) {
+      listString(objectsData);
+    }
+    return objectsData;
+  }
+}
+// endregion ContactNoteFilterBuilder
+
+// region ContactNoteFields
+class ContactNoteFields {
+  static TableField? _fId;
+  static TableField get id {
+    return _fId = _fId ?? SqlSyntax.setField(_fId, 'id', DbType.integer);
+  }
+
+  static TableField? _fNote;
+  static TableField get note {
+    return _fNote = _fNote ?? SqlSyntax.setField(_fNote, 'note', DbType.text);
+  }
+
+  static TableField? _fDate;
+  static TableField get date {
+    return _fDate =
+        _fDate ?? SqlSyntax.setField(_fDate, 'date', DbType.datetime);
+  }
+
+  static TableField? _fContactDetailId;
+  static TableField get ContactDetailId {
+    return _fContactDetailId = _fContactDetailId ??
+        SqlSyntax.setField(
+            _fContactDetailId, 'ContactDetailId', DbType.integer);
+  }
+}
+// endregion ContactNoteFields
+
+//region ContactNoteManager
+class ContactNoteManager extends SqfEntityProvider {
+  ContactNoteManager()
+      : super(Connect2DB(),
+            tableName: _tableName,
+            primaryKeyList: _primaryKeyList,
+            whereStr: _whereStr);
+  static const String _tableName = 'ContactNote';
+  static const List<String> _primaryKeyList = ['id'];
+  static const String _whereStr = 'id=?';
+}
+
+//endregion ContactNoteManager
 // region ContactDetailTag
 class ContactDetailTag extends TableBase {
   ContactDetailTag({this.TagId, this.ContactDetailId}) {
