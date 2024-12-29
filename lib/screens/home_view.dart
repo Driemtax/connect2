@@ -4,6 +4,7 @@ import 'package:connect2/services/contacts_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dummy_person.dart';
 
 // HomeContent Widget: Die scrollbare Liste
 class HomeContent extends StatefulWidget {
@@ -48,7 +49,6 @@ class HomeContentState extends State<HomeContent> {
               title: const Text("QR-Code importieren"),
               onTap: () {
                 Navigator.pop(context);
-                // Implementiere hier die Funktionalität für den QR-Code
               },
             ),
             ListTile(
@@ -66,7 +66,7 @@ class HomeContentState extends State<HomeContent> {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.clear();
               },
-            )
+            ),
           ],
         );
       },
@@ -163,15 +163,26 @@ class HomeContentState extends State<HomeContent> {
         tooltip: 'Menü anzeigen',
         child: const Icon(Icons.add),
       ),
-      body: ListView.builder(
-        itemCount: names.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            leading: const Icon(Icons.person),
-            title: Text(names[index]),
-          );
-        },
-      ),
+      body: contacts.isEmpty
+          ? Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: contacts.length,
+              itemBuilder: (context, index) {
+                final contact = contacts[index];
+                return ListTile(
+                  title: Text(contact.displayName),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            DummyPersonView(name: contact.displayName),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
     );
   }
 }

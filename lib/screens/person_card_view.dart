@@ -21,7 +21,7 @@ class _PersonCardViewState extends State<PersonCardView> {
   bool _isLoading = true;
   late TextEditingController _residenceController;
   late TextEditingController _employerController;
-
+  
   String _name = "";
   DateTime? _birthDate;
   String _residence = "";
@@ -50,7 +50,7 @@ class _PersonCardViewState extends State<PersonCardView> {
     _employerController.dispose();
     super.dispose();
   }
-
+  
   Future<void> _initializeData() async {
     await _contactManager.loadContactFromDatabase();
     setState(() {
