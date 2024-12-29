@@ -16,23 +16,31 @@ class GraphViewCanvas extends StatefulWidget {
 class GraphViewCanvasState extends State<GraphViewCanvas> {
   List<Node> nodes = [];
   Random random = Random();
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     nodes = List.from(widget.initialNodes);
-    Node centerForce = Node(const Offset(150.0, 300.0), [], true, "Center Force");
-    // Center force node
-    for (var node in nodes) {        
-      node.addEdgeTo(centerForce);
-      centerForce.addEdgeTo(node);
+    Node centerForce =
+        Node(const Offset(150.0, 300.0), [], true, "Center Force");
+    for (var node in nodes) {
+      connectNodes(node, centerForce);
     }
     nodes.add(centerForce);
 
-    Timer.periodic(const Duration(milliseconds: 3), (timer) {
-      setState(() {
-        nodes = forceDirectedGraphAlgorithm(nodes);
-      });
+    _timer = Timer.periodic(const Duration(milliseconds: 3), (timer) {
+      if (mounted) {
+        setState(() {
+          nodes = forceDirectedGraphAlgorithm(nodes);
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+
+    Future.delayed(const Duration(seconds: 10), () {
+      _timer?.cancel();
     });
   }
 
@@ -41,7 +49,8 @@ class GraphViewCanvasState extends State<GraphViewCanvas> {
     return Center(
       child: CustomPaint(
         size: const Size(300, 600),
-        painter: GraphPainter(nodes, Theme.of(context).primaryColor, Theme.of(context).focusColor, random),
+        painter: GraphPainter(nodes, Theme.of(context).primaryColor,
+            Theme.of(context).focusColor, random),
       ),
     );
   }
@@ -76,7 +85,8 @@ class GraphPainter extends CustomPainter {
         text: node.name,
         style: textStyle,
       );
-      final textPainter = TextPainter(text: textSpan, textDirection: TextDirection.ltr);
+      final textPainter =
+          TextPainter(text: textSpan, textDirection: TextDirection.ltr);
       textPainter.layout(
         minWidth: 0,
         maxWidth: size.width,
@@ -88,7 +98,10 @@ class GraphPainter extends CustomPainter {
       }
       if (!node.centerNode) {
         canvas.drawCircle(node.pos, 5, nodePaint);
-        textPainter.paint(canvas, Offset(node.pos.dx - (textPainter.size.width / 2), node.pos.dy - 17.5));
+        textPainter.paint(
+            canvas,
+            Offset(node.pos.dx - (textPainter.size.width / 2),
+                node.pos.dy - 17.5));
       }
     }
   }

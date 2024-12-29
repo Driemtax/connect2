@@ -1,5 +1,10 @@
 import 'package:flutter/services.dart';
 
+void connectNodes(Node fromNode, Node toNode) {
+  fromNode.addEdgeTo(toNode);
+  toNode.addEdgeTo(fromNode);
+}
+
 class Node {
   Offset pos;
   List<Node> edgesTo;
