@@ -44,6 +44,27 @@ const tableContactNote = SqfEntityTable(
   ],
 );
 
+const tableContactRelation = SqfEntityTable(
+  tableName: 'ContactRelation',
+  primaryKeyName: 'id',
+  primaryKeyType: PrimaryKeyType.integer_auto_incremental,
+  fields: [
+    SqfEntityField('name', DbType.text),
+    SqfEntityFieldRelationship(
+      fieldName: 'from',
+      // relationType: RelationType.ONE_TO_ONE,
+      parentTable: tableContactDetail,
+      deleteRule: DeleteRule.CASCADE,
+    ),
+    SqfEntityFieldRelationship(
+      fieldName: 'to',
+      // relationType: RelationType.ONE_TO_ONE,
+      parentTable: tableContactDetail,
+      deleteRule: DeleteRule.CASCADE, 
+    ),
+  ],
+);
+
 @SqfEntityBuilder(connect2DatabaseModel)
 const connect2DatabaseModel = SqfEntityModel(
   modelName: 'Connect2DB',
@@ -52,6 +73,7 @@ const connect2DatabaseModel = SqfEntityModel(
     tableTag,
     tableContactDetail,
     tableContactNote,
+    tableContactRelation,
   ],
   sequences: [],
 );

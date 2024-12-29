@@ -6,13 +6,25 @@ class FullContact {
   ContactDetail contactDetail;
   List<Tag> tags;
   List<ContactNote> notes;
+  // Relations that have been defined from this contact to others
+  List<ContactRelation> outgoingContactRelations;
+  // Relations that 
+  List<ContactRelation> incomingContactRelations;
   Contact phoneContact;
-  
-  FullContact({required this.tags, required this.contactDetail, required this.phoneContact, required this.notes});
+
+  FullContact({
+    required this.tags,
+    required this.contactDetail,
+    required this.phoneContact,
+    required this.notes,
+    required this.outgoingContactRelations,
+    required this.incomingContactRelations
+  });
 
   // Warning the tag has to be saved in t he database already
   void addTag(Tag tag) async {
-    await ContactDetailTag(ContactDetailId: contactDetail.id, TagId: tag.id).save();
+    await ContactDetailTag(ContactDetailId: contactDetail.id, TagId: tag.id)
+        .save();
     tags.add(tag);
   }
 
@@ -25,8 +37,14 @@ class FullContact {
   }
 
   void removeTag(Tag tag) async {
-    await ContactDetailTag().select().TagId.equals(tag.id).ContactDetailId.equals(contactDetail.id).delete();
     tags.remove(tag);
+    await ContactDetailTag()
+        .select()
+        .TagId
+        .equals(tag.id)
+        .ContactDetailId
+        .equals(contactDetail.id)
+        .delete();
   }
 
   void addNewNote(String text, DateTime date) async {
@@ -35,21 +53,67 @@ class FullContact {
   }
 
   void deleteNote(ContactNote note) async {
-    await note.delete();
     notes.remove(note);
-  } 
+    await note.delete();
+  }
+
+  void addContactRelation(String name, int toContactDetailId) async {
+    ContactRelation newContactRelation =
+        await _createNewContactRelation(name, toContactDetailId);
+    outgoingContactRelations.add(newContactRelation);
+  }
+
+  void deleteContactRelation(ContactRelation contactRelation) async {
+    outgoingContactRelations.remove(contactRelation);
+    await contactRelation.delete();
+  }
+
+  Future<ContactRelation> _createNewContactRelation(
+    String name,
+    int toContactDetailId,
+  ) async {
+    int? newContactRelationId = await ContactRelation(
+      name: name,
+      from: contactDetail.id,
+      to: toContactDetailId,
+    ).save();
+    if (newContactRelationId != null) {
+      ContactRelation? newContactRelation =
+          await ContactRelation().getById(newContactRelationId);
+      if (newContactRelation != null) {
+        return newContactRelation;
+      } else {
+        throw DatabaseErrorException(
+          'At this point newContactRelation should never be null!',
+        );
+      }
+    } else {
+      throw DatabaseErrorException(
+        'Could not save a new ContactRelation into the Database',
+      );
+    }
+  }
 
   Future<ContactNote> _createNewContactNode(String text, DateTime date) async {
-    int? newContactNoteId = await ContactNote(note: text, date: date, ContactDetailId: contactDetail.id).save();
+    int? newContactNoteId = await ContactNote(
+      note: text,
+      date: date,
+      ContactDetailId: contactDetail.id,
+    ).save();
     if (newContactNoteId != null) {
-      ContactNote? newContactNote = await ContactNote().getById(newContactNoteId);
+      ContactNote? newContactNote =
+          await ContactNote().getById(newContactNoteId);
       if (newContactNote != null) {
         return newContactNote;
       } else {
-        throw DatabaseErrorException('At this point newContactNote should never be null!');
+        throw DatabaseErrorException(
+          'At this point newContactNote should never be null!',
+        );
       }
     } else {
-      throw DatabaseErrorException('Could not save a new ContactNote into the Database');
+      throw DatabaseErrorException(
+        'Could not save a new ContactNote into the Database',
+      );
     }
   }
 
@@ -60,10 +124,14 @@ class FullContact {
       if (newTag != null) {
         return newTag;
       } else {
-        throw DatabaseErrorException('At this point newTag should never be null!');
+        throw DatabaseErrorException(
+          'At this point newTag should never be null!',
+        );
       }
     } else {
-      throw DatabaseErrorException('Could not save a new Tag into the database');
+      throw DatabaseErrorException(
+        'Could not save a new Tag into the database',
+      );
     }
   }
 }

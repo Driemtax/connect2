@@ -26,11 +26,17 @@ class ContactService {
     tags ??= [];
     List<ContactNote>? notes = await contactDetail.getContactNotes()?.toList();
     notes ??= [];
+    List<ContactRelation>? outgoingContactRelations = await contactDetail.getContactRelations()?.toList();
+    outgoingContactRelations ??= [];
+    List<ContactRelation>? incomingContactRelations = await contactDetail.getContactRelationsByto()?.toList();
+    incomingContactRelations ??= [];
     FullContact fullContact = FullContact(
       tags: tags,
       contactDetail: contactDetail,
       phoneContact: phoneContact,
       notes: notes,
+      outgoingContactRelations: outgoingContactRelations,
+      incomingContactRelations: incomingContactRelations,
     );
     return fullContact;
   }
@@ -49,6 +55,8 @@ class ContactService {
     FullContact newFullContact = FullContact(
       tags: [],
       notes: [],
+      incomingContactRelations: [],
+      outgoingContactRelations: [],
       contactDetail: newContactDetail,
       phoneContact: newPhoneContact,
     );
