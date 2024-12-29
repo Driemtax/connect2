@@ -4,7 +4,6 @@ import 'package:connect2/services/contacts_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dummy_person.dart';
 
 // HomeContent Widget: Die scrollbare Liste
 class HomeContent extends StatefulWidget {
