@@ -36,6 +36,76 @@ class HomeContentState extends State<HomeContent> {
     loadContacts();
   }
 
+  void _showMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.qr_code),
+              title: const Text("QR-Code importieren"),
+              onTap: () {
+                Navigator.pop(context); // Schließt das Menü
+                // Implementiere hier die Funktionalität für den QR-Code
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.create),
+              title: const Text("Manuell erstellen"),
+              onTap: () {
+                Navigator.pop(context); // Schließt das Menü
+                _showNameInputDialog(context); // Öffnet das Popup
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showNameInputDialog(BuildContext context) {
+    final TextEditingController nameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Neuer Kontakt"),
+          content: TextField(
+            controller: nameController,
+            decoration: const InputDecoration(
+              hintText: "Namen eingeben",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Abbrechen"),
+            ),
+            TextButton(
+              onPressed: () async {
+                final String name = nameController.text.trim();
+                if (name.isNotEmpty) {
+                  Contact contact = Contact(name: Name(first: name));
+
+                  int contactId = await saveNewContact(contact);;
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (context) => PersonCardView(contactId: contactId))); 
+                }
+              },
+              child: const Text("Speichern"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // TODO prettify the view
@@ -64,21 +134,25 @@ class HomeContentState extends State<HomeContent> {
 
     // TODO prettify the message
     if (contacts.isEmpty) {
-      return const Scaffold(
+      return Scaffold(
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            _showMenu(context);
+          },
+          tooltip: "Menü anzeigen",
+          child: const Icon(Icons.add),
+        ),
         body:
-            Center(child: Text('No contacts have been found.')), // TODO add i18
+            Center(child: Text('Es wurden keine Kontakte gefunden.')), // TODO add i18
       );
     }
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const PersonCardView()),
-          );
+          _showMenu(context);
         },
-        tooltip: 'Increment',
+        tooltip: 'Menü anzeigen',
         child: const Icon(Icons.add),
       ),
       body: contacts.isEmpty

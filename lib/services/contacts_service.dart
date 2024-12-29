@@ -71,14 +71,17 @@ Future<void> saveModifiedContact(Contact contact) async {
 ///
 /// - Parameter contact: The `Contact` object to save as a new contact.
 /// - Throws: `PermissionDeniedException` if contact permissions are not granted.
-Future<void> saveNewContact(Contact contact) async {
+Future<int> saveNewContact(Contact contact) async {
   if (await FlutterContacts.requestPermission()) {
     try {
-      await FlutterContacts.insertContact(contact);
+      contact = await FlutterContacts.insertContact(contact);
+      // contact.displayName = name;
+      // await FlutterContacts.updateContact(contact);
     } catch (e) {
       throw Exception('Failed to save new contact: ${e.toString()}');
     }
   } else {
     throw PermissionDeniedException('Contact permissions were not granted.');
   }
+  return int.parse(contact.id);
 }
