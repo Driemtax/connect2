@@ -176,7 +176,7 @@ class HomeContentState extends State<HomeContent> {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            DummyPersonView(name: contact.displayName),
+                            PersonCardView(contactId: int.parse(contact.id)),
                       ),
                     );
                   },

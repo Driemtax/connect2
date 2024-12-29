@@ -27,10 +27,20 @@ class ContactManager {
   Future<void> _saveContactToDatabase() async {
     // TODO Update database here
     Contact updatedContact = Contact();
+    DateTime? birthdate = contactData["birthDate"];
+
     updatedContact.id = contactId.toString();
     updatedContact.name.first = contactData["name"];
-    updatedContact.addresses.first = Address(contactData["residence"]);
-    updatedContact.organizations.first = contactData["employer"];
+    if (birthdate != null) {
+      updatedContact.events.first = Event(year: birthdate.year, 
+      month: birthdate.month, day: birthdate.day, label: EventLabel.birthday);
+    }
+    if (contactData["residence"] != null) {
+      updatedContact.addresses.first = Address(contactData["residence"]);
+    }
+    if (contactData["employer"] != null) {
+      updatedContact.organizations.first = contactData["employer"];
+    }
 
     // Save updated Contact to phone contacts
     saveModifiedContact(updatedContact);

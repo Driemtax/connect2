@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:connect2/models/note.dart';
 import 'package:connect2/main.dart';
+import 'package:textfield_tags/textfield_tags.dart';
 
 class PersonCardView extends StatefulWidget {
   final int contactId;
@@ -26,6 +27,10 @@ class _PersonCardViewState extends State<PersonCardView> {
   DateTime? _birthDate;
   String _residence = "";
   String _employer = "";
+
+  // Tags
+  List<String> _tags = [];
+
   // Notes
   final List<Note> _noteList = [];
 
@@ -94,7 +99,7 @@ class _PersonCardViewState extends State<PersonCardView> {
     if (pickedDate != null){
       setState(() {
         _birthDate = pickedDate;
-        _contactManager.updateContactField('birthDate', pickedDate.toIso8601String());
+        _contactManager.updateContactField('birthDate', pickedDate);
       });
     }
   }
@@ -354,7 +359,48 @@ class _PersonCardViewState extends State<PersonCardView> {
                   const SizedBox(height: 8),
                   _buildEditableInfoRow("Wohnort", _residence, colorScheme),
                   const SizedBox(height: 8),
-                  _buildEditableInfoRow("Arbeitgeber / Uni", _employer, colorScheme)
+                  _buildEditableInfoRow("Arbeitgeber / Uni", _employer, colorScheme),
+                  const SizedBox(height: 8,),
+                  Text(
+                    'Tags',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFieldTags(
+                    textSeparators: const [' ', ','],
+                    initialTags: _tags,
+                    textFieldStyler: TextFieldStyler(
+                      hintText: 'Tags hinzufügen (z. B. Uni, Arbeit, Freunde)',
+                      textFieldFilledColor: colorScheme.surfaceContainerHighest,
+                      textFieldBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      textStyle: TextStyle(color: colorScheme.onSurface),
+                    ),
+                    tagsStyler: TagsStyler(
+                      tagTextStyle: TextStyle(color: colorScheme.onPrimaryContainer),
+                      tagDecoration: BoxDecoration(
+                        color: colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      tagCancelIcon: Icon(Icons.cancel, size: 18, color: colorScheme.onPrimaryContainer),
+                    ),
+                    onTag: (tag) {
+                      setState(() {
+                        _tags.add(tag);
+                        _contactManager.updateContactField("tags", _tags);
+                      });
+                    },
+                    onDelete: (tag) {
+                      setState(() {
+                        _tags.remove(tag);
+                      });
+                    },
+                  ),
                 ],
               ),
 
