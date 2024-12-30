@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:connect2/components/graph_view/force_directed_graph_algorithm.dart';
 import 'package:connect2/components/graph_view/node.dart';
+import 'package:connect2/screens/dummy_person.dart';
 import 'package:flutter/material.dart';
 
 class GraphViewCanvas extends StatefulWidget {
@@ -17,8 +18,7 @@ class GraphViewCanvasState extends State<GraphViewCanvas> {
   List<Node> nodes = [];
   Random random = Random();
   Timer? _timer;
-
-  Offset graphOffset = Offset.zero;
+  Offset graphOffset = Offset.zero; // Offset für Verschiebungen
 
   @override
   void initState() {
@@ -46,26 +46,52 @@ class GraphViewCanvasState extends State<GraphViewCanvas> {
     });
   }
 
+  void handleNodeTap(Node tappedNode) {
+    if (tappedNode.nodeType == NodeType.node) {
+      // TODO Change this route to the real person routeee!
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DummyPersonView(name: tappedNode.name),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onPanUpdate: (details) {
         setState(() {
-          graphOffset += details.delta; // Update the offset
+          graphOffset += details.delta;
         });
       },
-      child: Center(
-        child: CustomPaint(
-          size: const Size(300, 600),
-          painter: GraphPainter(
-            nodes,
-            Theme.of(context).primaryColor,
-            Theme.of(context).focusColor,
-            random,
-            Theme.of(context).primaryColorDark,
-            graphOffset,
-          ),
-        ),
+      onTapDown: (details) {
+        final tapPosition = details.localPosition - graphOffset;
+        for (var node in nodes) {
+          final distance = (node.pos - tapPosition).distance;
+          if (distance <= 10) {
+            handleNodeTap(node);
+            return;
+          }
+        }
+      },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final canvasSize = Size(constraints.maxWidth, constraints.maxHeight);
+
+          return CustomPaint(
+            size: canvasSize,
+            painter: GraphPainter(
+              nodes,
+              Theme.of(context).primaryColor,
+              Theme.of(context).focusColor,
+              random,
+              Theme.of(context).primaryColorDark,
+              graphOffset,
+            ),
+          );
+        },
       ),
     );
   }
@@ -98,6 +124,7 @@ class GraphPainter extends CustomPainter {
       ..color = edgeColor
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 1.0;
+
     const textStyle = TextStyle(
       color: Colors.black,
       fontSize: 10,
