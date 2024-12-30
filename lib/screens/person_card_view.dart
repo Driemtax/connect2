@@ -56,12 +56,21 @@ class _PersonCardViewState extends State<PersonCardView> {
     setState(() {
       _name = fullContact!.phoneContact.displayName;
 
-      String? date = fullContact?.phoneContact.events
-      .firstWhere(
+      Event? birthdayEvent = fullContact?.phoneContact.events.firstWhere(
         (event) => event.label == EventLabel.birthday,
         orElse: () => Event(month: 0, day: 0),
-      ).toString();
-      _birthDate = date != null ? DateTime.tryParse(date) : null;
+      );
+
+      if (birthdayEvent != null && birthdayEvent.year != null) {
+        _birthDate = DateTime(
+          birthdayEvent.year!,
+          birthdayEvent.month,
+          birthdayEvent.day,
+        );
+      } else {
+        _birthDate = null;
+      }
+
       _residence = fullContact?.phoneContact.addresses.isNotEmpty == true
       ? fullContact!.phoneContact.addresses.first.address
       : "";
