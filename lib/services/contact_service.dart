@@ -90,6 +90,8 @@ class ContactService {
   ///
   /// This method saves both the phone contact and the contact detail information.
   void updateFullContact(FullContact fullContact) async {
+    String? id = fullContact.phoneContact.id;
+    print("Hab ich hier noch eine Id?: $id");
     await phoneContactProvider.saveModified(fullContact.phoneContact);
     await fullContact.contactDetail.save();
   }
@@ -219,12 +221,13 @@ class ContactService {
   }
 
   /// Gets the contact object of the users own contact if one exists.
-  Future<Contact?> getOwnPhoneContact() async {
+  Future<FullContact?> getOwnPhoneContact() async {
     final phoneContactId = await getOwnPhoneContactId();
     if (phoneContactId != null) {
       final contacts = await getAll();
       try {
-        return contacts.firstWhere((c) => c.id == phoneContactId);
+        Contact? contact = contacts.firstWhere((c) => c.id == phoneContactId);
+        return getFullContact(contact.id);
       } catch (e) {
         return null;
       }

@@ -1,6 +1,7 @@
+import 'package:connect2/model/full_contact.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
-import 'package:connect2/services/contacts_service.dart'; 
+import 'package:connect2/services/contact_service.dart'; 
 import 'package:connect2/screens/person_card_view.dart';
 import 'package:connect2/screens/own_card.dart';
 
@@ -12,7 +13,8 @@ class OwnContactView extends StatefulWidget {
 }
 
 class _OwnContactViewState extends State<OwnContactView> {
-  Contact? _ownContact;
+  final ContactService _service = ContactService();
+  FullContact? _ownContact;
 
   @override
   void initState() {
@@ -21,14 +23,14 @@ class _OwnContactViewState extends State<OwnContactView> {
   }
 
   Future<void> _loadOwnContact() async {
-    final contact = await getOwnContact();
+    final contact = await _service.getOwnPhoneContact();
     setState(() {
       _ownContact = contact;
     });
   }
 
   void _selectExistingContact() async {
-    final contacts = await getContacts();
+    final contacts = await _service.getAll();
     showDialog(
       context: context,
       builder: (context) {
@@ -43,7 +45,7 @@ class _OwnContactViewState extends State<OwnContactView> {
                 return ListTile(
                   title: Text(contact.displayName),
                   onTap: () async {
-                    await saveOwnContactId(contact.id);
+                    await _service.saveOwnPhoneContactId(contact.id);
                     Navigator.pop(context);
                     _loadOwnContact();
                   },
@@ -81,13 +83,13 @@ class _OwnContactViewState extends State<OwnContactView> {
               onPressed: () async {
                 final String name = nameController.text.trim();
                 if (name.isNotEmpty) {
-                  Contact contact = Contact(name: Name(first: name));
+                  Contact newPhoneContact = Contact(name: Name(first: name));
+                  FullContact newFullContact = await _service.createFullContact(newPhoneContact);
 
-                  int contactId = await saveNewContact(contact);
-                  saveOwnContactId(contactId.toString());
+                  _service.saveOwnPhoneContactId(newFullContact.phoneContact.id);
                   Navigator.push(
                     context, 
-                    MaterialPageRoute(builder: (context) => PersonCardView(phoneContactId: contactId))); 
+                    MaterialPageRoute(builder: (context) => PersonCardView(phoneContactId: newFullContact.phoneContact.id))); 
                 }
               },
               child: const Text("Speichern"),
@@ -106,8 +108,8 @@ class _OwnContactViewState extends State<OwnContactView> {
   Widget build(BuildContext context) {
     // if own contact exists just show the view for ownContact
     if (_ownContact != null) {
-      int contactId = int.parse(_ownContact!.id);
-      return OwnCardView(contactId: contactId);
+      String contactId = _ownContact!.phoneContact.id;
+      return OwnCardView(phoneContactId: contactId);
     }
 
     // If own contact doenst exist, show buttons to select what to do

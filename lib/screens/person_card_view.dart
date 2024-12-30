@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:connect2/helper/contact_manager.dart';
 import 'package:connect2/model/full_contact.dart';
 import 'package:connect2/model/model.dart';
@@ -7,7 +8,6 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:connect2/models/note.dart';
 import 'package:connect2/main.dart';
 
 class PersonCardView extends StatefulWidget {
@@ -57,15 +57,28 @@ class _PersonCardViewState extends State<PersonCardView> {
   
   Future<void> _initializeData() async {
     fullContact = await _contactManager.loadContactFromDatabase();
+    String testName = fullContact!.phoneContact.displayName;
+    print("FullContact after DB load: $testName");
     setState(() {
       _name = fullContact!.phoneContact.displayName;
-      String date = fullContact!.phoneContact.events
+
+      String? date = fullContact?.phoneContact.events
       .firstWhere(
-        (event) => event.label == EventLabel.birthday
+        (event) => event.label == EventLabel.birthday,
+        orElse: () => Event(month: 0, day: 0),
       ).toString();
-      _birthDate = DateTime.parse(date);
-      _residence = fullContact!.phoneContact.addresses.first.address;
-      _employer = fullContact!.phoneContact.organizations.first.company;
+      _birthDate = date != null ? DateTime.tryParse(date) : null;
+      print("\n");
+      print("PhoneDate: $date");
+      print("birthdate: $_birthDate");
+
+      _residence = fullContact?.phoneContact.addresses.isNotEmpty == true
+      ? fullContact!.phoneContact.addresses.first.address
+      : "";
+
+      _employer = fullContact?.phoneContact.organizations.isNotEmpty == true
+      ? fullContact!.phoneContact.organizations.first.company
+      : "";
 
       // Controller
       _residenceController = TextEditingController(text: _residence);
@@ -101,9 +114,18 @@ class _PersonCardViewState extends State<PersonCardView> {
       setState(() {
 
         if (fullContact != null) {
-          fullContact!.phoneContact.events.first = Event(year: pickedDate.year, 
-          month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday);
+          if (fullContact!.phoneContact.events.isNotEmpty) {
+            fullContact!.phoneContact.events.first = Event(year: pickedDate.year, 
+            month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday);
+          }
+          else {
+            fullContact!.phoneContact.events.add(Event(year: pickedDate.year, 
+            month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday));
+          }
+
           _contactManager.updateFullContact(fullContact!);
+            _birthDate = DateTime(pickedDate.year, pickedDate.month, pickedDate.day);
+          
         } else {
           throw Exception('FullContact is null');
         }
@@ -111,17 +133,26 @@ class _PersonCardViewState extends State<PersonCardView> {
     }
   }
 
-  void _addNote(String newText) {
-    setState(() {
+  Future<void> _addNote(String newText) async {
+  if (fullContact != null) {
+    try {
       DateTime formattedDate = DateTime.now();
-      if (fullContact != null) {
-        fullContact!.addNewNote(newText, formattedDate);
-        _contactManager.updateFullContact(fullContact!);
-      } else {
-        throw Exception('FullContact is null');
-      }
-    });
+
+      ContactNote newNote = await fullContact!.addNewNote(newText, formattedDate);
+
+      _contactManager.updateFullContact(fullContact!);
+
+      setState(() {
+        _noteList.add(newNote);
+      });
+    } catch (error) {
+      throw Exception('Error while adding the note: $error');
+    }
+  } else {
+    throw Exception('FullContact is null');
   }
+}
+
 
   void _deleteNote(int index) {
     setState(() {
@@ -129,6 +160,7 @@ class _PersonCardViewState extends State<PersonCardView> {
       if (fullContact != null) {
         fullContact!.deleteNote(noteToDelete);
         _contactManager.updateFullContact(fullContact!);
+        _noteList.remove(noteToDelete);
       }
       else {
         throw Exception('FullContact is null');
@@ -641,8 +673,14 @@ class _PersonCardViewState extends State<PersonCardView> {
             setState(() {
               if (label == 'Wohnort') {
                 if (fullContact != null) {
-                  fullContact!.phoneContact.addresses.first = Address(newValue);
+                  if (fullContact!.phoneContact.addresses.isNotEmpty) {
+                    fullContact!.phoneContact.addresses.first = Address(newValue);
+                  }
+                  else {
+                    fullContact!.phoneContact.addresses.add(Address(newValue));
+                  }
                   _contactManager.updateFullContact(fullContact!);
+                  _residence = newValue;
                 }
                 else {
                   throw Exception('fullContact is null');
@@ -650,8 +688,14 @@ class _PersonCardViewState extends State<PersonCardView> {
               }
               else if (label == 'Arbeitgeber / Uni') {
                 if (fullContact != null) {
-                  fullContact!.phoneContact.organizations.first.company = newValue;
+                  if (fullContact!.phoneContact.organizations.isNotEmpty) {
+                    fullContact!.phoneContact.organizations.first.company = newValue;
+                  }
+                  else {
+                    fullContact!.phoneContact.organizations.add(Organization(company: newValue));
+                  }
                   _contactManager.updateFullContact(fullContact!);
+                  _employer = newValue;
                 }
                 else {
                   throw Exception('fullContact is null');

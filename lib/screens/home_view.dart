@@ -5,7 +5,6 @@ import 'package:connect2/services/contact_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dummy_person.dart';
 
 // HomeContent Widget: Die scrollbare Liste
 class HomeContent extends StatefulWidget {
@@ -101,8 +100,12 @@ class HomeContentState extends State<HomeContent> {
                 final String name = nameController.text.trim();
                 if (name.isNotEmpty) {
                   Contact contact = Contact(name: Name(first: name));
+                  print("\n");
+                  print("Contact: $contact");
 
                   FullContact newFullContact = await contactService.createFullContact(contact);
+                  String testName = newFullContact.phoneContact.displayName;
+                  print("FullConctact: $testName");
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => PersonCardView(phoneContactId: newFullContact.phoneContact.id))); 
@@ -178,7 +181,7 @@ class HomeContentState extends State<HomeContent> {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            PersonCardView(phoneContactId: int.parse(contact.id)),
+                            PersonCardView(phoneContactId: contact.id),
                       ),
                     );
                   },

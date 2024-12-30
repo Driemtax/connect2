@@ -6,15 +6,15 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class OwnCardView extends StatefulWidget {
-  final int contactId;
-  const OwnCardView({Key? key, required this.contactId}) : super(key: key);
+  final String phoneContactId;
+  const OwnCardView({Key? key, required this.phoneContactId}) : super(key: key);
   @override
   // ignore: library_private_types_in_public_api
   _OwnCardViewState createState() => _OwnCardViewState();
 }
 
 class _OwnCardViewState extends State<OwnCardView> {
-  late int contactId;
+  late String phoneContactId;
   late ContactManager _contactManager;
   bool _isLoading = true;
   late TextEditingController _residenceController;
@@ -34,8 +34,8 @@ class _OwnCardViewState extends State<OwnCardView> {
   @override
   void initState() {
     super.initState();
-    contactId = widget.contactId;
-    _contactManager = ContactManager.withId(contactId);
+    phoneContactId = widget.phoneContactId;
+    _contactManager = ContactManager.withId(phoneContactId);
     _initializeData();
     
   }
