@@ -1,6 +1,11 @@
 {
-    "app_title": "Connect2 - boost your NETWORK",
-    "navbar_home": "HAUS",
-    "navbar_graph": "GRAPH",
-    "navbar_card": "OWN Card"
+    "main":{
+        "app_title": "Connect2 - boost your network",
+        "navbar_home": "Home",
+        "navbar_graph": "Graph",
+        "navbar_card": "Own Card"
+    },
+    "person_view":{
+        "gen_info": "General Information"
+    }
 } 

@@ -67,7 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(FlutterI18n.translate(context, "app_title")),
+        title: Text(FlutterI18n.translate(context, "main.app_title")),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Center(
@@ -91,15 +91,15 @@ class _MyHomePageState extends State<MyHomePage> {
           NavigationDestination(
             selectedIcon: Icon(Icons.home),
             icon: Icon(Icons.home_outlined),
-            label: FlutterI18n.translate(context, "navbar_home"),
+            label: FlutterI18n.translate(context, "main.navbar_home"),
           ),
           NavigationDestination(
             icon: Icon(Icons.network_cell),
-            label: FlutterI18n.translate(context, "navbar_graph"),
+            label: FlutterI18n.translate(context, "main.navbar_graph"),
           ),
           NavigationDestination(
             icon: Icon(Icons.person),
-            label: FlutterI18n.translate(context, "navbar_card"),
+            label: FlutterI18n.translate(context, "main.navbar_card"),
           ),
         ],
       ),

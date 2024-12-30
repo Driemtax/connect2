@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:connect2/models/note.dart';
 import 'package:connect2/main.dart';
+import 'package:flutter_i18n/flutter_i18n.dart';
+
 
 class PersonCardView extends StatefulWidget {
   final int contactId;
@@ -348,7 +350,7 @@ class _PersonCardViewState extends State<PersonCardView> {
               // Allgemeine Informationen
               _buildInfoCard(
                 colorScheme,
-                'Allgemeine Informationen',
+                FlutterI18n.translate(context, "person_view.gen_info"),
                 [
                   _buildDatePickerRow("Geburtsdatum", _birthDate, colorScheme),
                   const SizedBox(height: 8),
