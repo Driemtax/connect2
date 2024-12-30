@@ -8,9 +8,22 @@ import 'package:connect2/provider/phone_contact_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 
+/// A service for managing contacts and their associated data, including 
+/// tags, notes, relationships, and visualization in a graph view.
 class ContactService {
+  /// A provider to fetch and save phone contacts.
   PhoneContactProvider phoneContactProvider = PhoneContactProvider();
 
+  /// Fetches all phone contacts and ensures their corresponding contact details
+  /// are created in the database.
+  ///
+  /// This method:
+  /// - Fetches all contacts from the phone.
+  /// - Checks if corresponding `ContactDetail` entries exist.
+  /// - Creates new `ContactDetail` entries for contacts that are not yet in the database.
+  ///
+  /// Returns:
+  /// - A [Future] resolving to a list of all [Contact] objects.
   Future<List<Contact>> getAll() async {
     List<Contact> contacts = await phoneContactProvider.getAll();
     List<ContactDetail> contactDetails =
@@ -27,7 +40,18 @@ class ContactService {
     return contacts;
   }
 
-  /// getFullContact
+  /// Fetches the full details of a contact, including associated tags, notes, 
+  /// and relationships.
+  ///
+  /// Parameters:
+  /// - [phoneContactId]: The unique ID of the phone contact.
+  ///
+  /// Returns:
+  /// - A [Future] resolving to a [FullContact] object containing the contact's
+  ///   details, tags, notes, and relationships.
+  ///
+  /// Throws:
+  /// - [DatabaseErrorException] if the contact cannot be fetched or saved.
   Future<FullContact> getFullContact(String phoneContactId) async {
     Contact phoneContact = await phoneContactProvider.get(phoneContactId);
     ContactDetail? contactDetail = await ContactDetail()
@@ -55,13 +79,29 @@ class ContactService {
     return fullContact;
   }
 
+  /// Updates a full contact's details and saves modifications to the database.
+  ///
+  /// Parameters:
+  /// - [fullContact]: The [FullContact] object with updated data to save.
+  ///
+  /// This method saves both the phone contact and the contact detail information.
   void updateFullContact(FullContact fullContact) async {
     await phoneContactProvider.saveModified(fullContact.phoneContact);
     await fullContact.contactDetail.save();
   }
 
-  // To Create a new Full Contact you will have to create a phoneContact so a normal Contact object.
-  // The phoneContact is not allowed to have an id when its getting created! Otherwise its going to fail!
+  /// Creates a new full contact by saving a new phone contact and
+  /// initializing associated contact details.
+  ///
+  /// Parameters:
+  /// - [phoneContact]: A [Contact] object representing the new phone contact.
+  ///   Ensure the contact has no ID, as the ID is generated during creation.
+  ///
+  /// Returns:
+  /// - A [Future] resolving to the newly created [FullContact].
+  ///
+  /// Throws:
+  /// - [DatabaseErrorException] if the contact cannot be created.
   Future<FullContact> createFullContact(Contact phoneContact) async {
     Contact newPhoneContact = await phoneContactProvider.saveNew(phoneContact);
     ContactDetail newContactDetail =
@@ -77,6 +117,19 @@ class ContactService {
     return newFullContact;
   }
 
+  /// Generates a list of nodes representing contacts and tags, 
+  /// along with their relationships, for visualization in a graph view.
+  ///
+  /// This method:
+  /// - Ensures all `ContactDetail` entries exist.
+  /// - Creates nodes for all contacts and tags.
+  /// - Adds edges between related nodes.
+  ///
+  /// Returns:
+  /// - A [Future] resolving to a list of [Node] objects for the graph.
+  ///
+  /// Notes:
+  /// - This method may affect performance due to database integrity checks.
   Future<List<Node>> getGraphViewNodes() async {
     List<Node> nodes = [];
     Random random = Random();
@@ -143,6 +196,14 @@ class ContactService {
     return nodes;
   }
 
+  /// Creates a node representing a contact for the graph view.
+  ///
+  /// Parameters:
+  /// - [random]: A [Random] instance for generating random node positions.
+  /// - [phoneContactId]: The unique ID of the phone contact.
+  ///
+  /// Returns:
+  /// - A [Future] resolving to a [Node] object.
   Future<Node> _createNodeFromContact(
       Random random, String phoneContactId) async {
     Contact phoneContact = await phoneContactProvider.get(phoneContactId);
@@ -155,6 +216,14 @@ class ContactService {
     return newNode;
   }
 
+  /// Creates a node representing a tag for the graph view.
+  ///
+  /// Parameters:
+  /// - [random]: A [Random] instance for generating random node positions.
+  /// - [tag]: The [Tag] object to create a node for.
+  ///
+  /// Returns:
+  /// - A [Node] object.
   Node _createNodeFromTag(Random random, Tag tag) {
     Node newNode = Node(
       Offset(random.nextDouble() * 256, random.nextDouble() * 256),
@@ -165,7 +234,16 @@ class ContactService {
     return newNode;
   }
 
-  /// create a new Contact Detail with a phoneContactId
+  /// Creates a new `ContactDetail` entry in the database for a given phone contact.
+  ///
+  /// Parameters:
+  /// - [phoneContactId]: The unique ID of the phone contact.
+  ///
+  /// Returns:
+  /// - A [Future] resolving to the newly created [ContactDetail].
+  ///
+  /// Throws:
+  /// - [DatabaseErrorException] if the contact detail cannot be saved.
   Future<ContactDetail> _createNewContactDetail(String phoneContactId) async {
     int? newContactDetailId =
         await ContactDetail(phoneContactId: phoneContactId).save();
