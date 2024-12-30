@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 
-enum NodeType { node, centerNode, tag}
+enum NodeType { node, centerNode, tag }
 
 void connectNodes(Node fromNode, Node toNode) {
   fromNode.addEdgeTo(toNode);
@@ -9,11 +9,17 @@ void connectNodes(Node fromNode, Node toNode) {
 
 class Node {
   Offset pos;
-  List<Node> edgesTo;
-  NodeType nodeType = NodeType.node;
+  List<Node> edgesTo = [];
+  NodeType nodeType;
   String name;
+  String? phoneContactId;
 
-  Node(this.pos, this.edgesTo, this.nodeType, this.name);
+  Node({
+    required this.pos,
+    this.nodeType = NodeType.node,
+    this.name = '',
+    this.phoneContactId,
+  });
 
   void addEdgeTo(Node toNode) {
     edgesTo.add(toNode);

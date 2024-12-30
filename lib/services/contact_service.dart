@@ -245,10 +245,9 @@ class ContactService {
       Random random, String phoneContactId) async {
     Contact phoneContact = await phoneContactProvider.get(phoneContactId);
     Node newNode = Node(
-      Offset(random.nextDouble() * 256, random.nextDouble() * 256),
-      [],
-      NodeType.node,
-      phoneContact.displayName,
+      pos: Offset(random.nextDouble() * 256, random.nextDouble() * 256),
+      name: phoneContact.displayName,
+      phoneContactId: phoneContactId,
     );
     return newNode;
   }
@@ -263,10 +262,9 @@ class ContactService {
   /// - A [Node] object.
   Node _createNodeFromTag(Random random, Tag tag) {
     Node newNode = Node(
-      Offset(random.nextDouble() * 256, random.nextDouble() * 256),
-      [],
-      NodeType.tag,
-      tag.name ?? '',
+      pos: Offset(random.nextDouble() * 256, random.nextDouble() * 256),
+      nodeType: NodeType.tag,
+      name: tag.name ?? ''
     );
     return newNode;
   }
