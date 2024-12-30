@@ -100,12 +100,9 @@ class HomeContentState extends State<HomeContent> {
                 final String name = nameController.text.trim();
                 if (name.isNotEmpty) {
                   Contact contact = Contact(name: Name(first: name));
-                  print("\n");
-                  print("Contact: $contact");
 
                   FullContact newFullContact = await contactService.createFullContact(contact);
                   String testName = newFullContact.phoneContact.displayName;
-                  print("FullConctact: $testName");
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => PersonCardView(phoneContactId: newFullContact.phoneContact.id))); 
