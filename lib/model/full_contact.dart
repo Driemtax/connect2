@@ -47,9 +47,10 @@ class FullContact {
         .delete();
   }
 
-  void addNewNote(String text, DateTime date) async {
+  Future<ContactNote> addNewNote(String text, DateTime date) async {
     ContactNote newContactNote = await _createNewContactNode(text, date);
     notes.add(newContactNote);
+    return newContactNote;
   }
 
   void deleteNote(ContactNote note) async {

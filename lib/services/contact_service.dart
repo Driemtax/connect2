@@ -219,7 +219,7 @@ class ContactService {
   }
 
   /// Gets the contact object of the users own contact if one exists.
-  Future<Contact?> getOwnContact() async {
+  Future<Contact?> getOwnPhoneContact() async {
     final phoneContactId = await getOwnPhoneContactId();
     if (phoneContactId != null) {
       final contacts = await getAll();
