@@ -105,7 +105,7 @@ class HomeContentState extends State<HomeContent> {
                   FullContact newFullContact = await contactService.createFullContact(contact);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => PersonCardView(contactId: newFullContact.phoneContact.id))); 
+                    MaterialPageRoute(builder: (context) => PersonCardView(phoneContactId: newFullContact.phoneContact.id))); 
                 }
               },
               child: const Text("Speichern"),
@@ -178,7 +178,7 @@ class HomeContentState extends State<HomeContent> {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            PersonCardView(contactId: int.parse(contact.id)),
+                            PersonCardView(phoneContactId: int.parse(contact.id)),
                       ),
                     );
                   },

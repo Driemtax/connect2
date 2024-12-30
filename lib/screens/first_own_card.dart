@@ -87,7 +87,7 @@ class _OwnContactViewState extends State<OwnContactView> {
                   saveOwnContactId(contactId.toString());
                   Navigator.push(
                     context, 
-                    MaterialPageRoute(builder: (context) => PersonCardView(contactId: contactId))); 
+                    MaterialPageRoute(builder: (context) => PersonCardView(phoneContactId: contactId))); 
                 }
               },
               child: const Text("Speichern"),
