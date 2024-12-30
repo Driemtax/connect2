@@ -12,7 +12,7 @@ class PhoneContactProvider {
   /// - Throws: `PermissionDeniedException` if the app does not have contact permissions.
   Future<List<Contact>> getAll() async {
     if (await FlutterContacts.requestPermission()) {
-      return await FlutterContacts.getContacts();
+      return await FlutterContacts.getContacts(withAccounts: true, sorted: true);
     } else {
       throw PermissionDeniedException('Contact permissions were not granted.');
     }
@@ -33,7 +33,7 @@ class PhoneContactProvider {
   ///           `ContactNotFoundException` if the contact cannot be found.
   Future<Contact> get(String id) async {
     if (await FlutterContacts.requestPermission()) {
-      Contact? contact = await FlutterContacts.getContact(id);
+      Contact? contact = await FlutterContacts.getContact(id, withAccounts: true);
       if (contact != null) {
         return contact;
       } else {

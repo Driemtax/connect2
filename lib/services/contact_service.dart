@@ -89,9 +89,7 @@ class ContactService {
   /// - [fullContact]: The [FullContact] object with updated data to save.
   ///
   /// This method saves both the phone contact and the contact detail information.
-  void updateFullContact(FullContact fullContact) async {
-    String? id = fullContact.phoneContact.id;
-    print("Hab ich hier noch eine Id?: $id");
+  Future<void> updateFullContact(FullContact fullContact) async {
     await phoneContactProvider.saveModified(fullContact.phoneContact);
     await fullContact.contactDetail.save();
   }
