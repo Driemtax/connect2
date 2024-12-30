@@ -1,8 +1,10 @@
 import 'package:connect2/exceptions/exceptions.dart';
+import 'package:connect2/model/full_contact.dart';
 import 'package:connect2/screens/person_card_view.dart';
-import 'package:connect2/provider/phone_contact_provider.dart';
+import 'package:connect2/services/contact_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dummy_person.dart';
 
 // HomeContent Widget: Die scrollbare Liste
@@ -16,11 +18,11 @@ class HomeContent extends StatefulWidget {
 class HomeContentState extends State<HomeContent> {
   List<Contact> contacts = [];
   bool permissionDenied = false;
-  PhoneContactProvider phoneContactProvider = PhoneContactProvider();
+  ContactService contactService = ContactService();
 
   void loadContacts() async {
     try {
-      final fetchedContacts = await phoneContactProvider.getAll();
+      final fetchedContacts = await contactService.getAll();
       setState(() {
         contacts = fetchedContacts;
       });
@@ -35,6 +37,83 @@ class HomeContentState extends State<HomeContent> {
   void initState() {
     super.initState();
     loadContacts();
+  }
+
+  void _showMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.qr_code),
+              title: const Text("QR-Code importieren"),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.create),
+              title: const Text("Manuell erstellen"),
+              onTap: () {
+                Navigator.pop(context); 
+                _showNameInputDialog(context); 
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete),
+              title: const Text("Daten zurücksetzen"),
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showNameInputDialog(BuildContext context) {
+    final TextEditingController nameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Neuer Kontakt"),
+          content: TextField(
+            controller: nameController,
+            decoration: const InputDecoration(
+              hintText: "Namen eingeben",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Abbrechen"),
+            ),
+            TextButton(
+              onPressed: () async {
+                final String name = nameController.text.trim();
+                if (name.isNotEmpty) {
+                  Contact contact = Contact(name: Name(first: name));
+
+                  FullContact newFullContact = await contactService.createFullContact(contact);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => PersonCardView(contactId: newFullContact.phoneContact.id))); 
+                }
+              },
+              child: const Text("Speichern"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -65,21 +144,25 @@ class HomeContentState extends State<HomeContent> {
 
     // TODO prettify the message
     if (contacts.isEmpty) {
-      return const Scaffold(
+      return Scaffold(
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            _showMenu(context);
+          },
+          tooltip: "Menü anzeigen",
+          child: const Icon(Icons.add),
+        ),
         body:
-            Center(child: Text('No contacts have been found.')), // TODO add i18
+            Center(child: Text('Es wurden keine Kontakte gefunden.')), // TODO add i18
       );
     }
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const PersonCardView()),
-          );
+          _showMenu(context);
         },
-        tooltip: 'Increment',
+        tooltip: 'Menü anzeigen',
         child: const Icon(Icons.add),
       ),
       body: contacts.isEmpty
@@ -95,7 +178,7 @@ class HomeContentState extends State<HomeContent> {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            DummyPersonView(name: contact.displayName),
+                            PersonCardView(contactId: int.parse(contact.id)),
                       ),
                     );
                   },

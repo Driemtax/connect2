@@ -7,8 +7,9 @@ import 'package:connect2/model/model.dart';
 import 'package:connect2/provider/phone_contact_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// A service for managing contacts and their associated data, including 
+/// A service for managing contacts and their associated data, including
 /// tags, notes, relationships, and visualization in a graph view.
 class ContactService {
   /// A provider to fetch and save phone contacts.
@@ -40,7 +41,7 @@ class ContactService {
     return contacts;
   }
 
-  /// Fetches the full details of a contact, including associated tags, notes, 
+  /// Fetches the full details of a contact, including associated tags, notes,
   /// and relationships.
   ///
   /// Parameters:
@@ -64,8 +65,11 @@ class ContactService {
     tags ??= [];
     List<ContactNote>? notes = await contactDetail.getContactNotes()?.toList();
     notes ??= [];
-    List<ContactRelation>? outgoingContactRelations =
-        await ContactRelation().select().fromId.equals(contactDetail.id).toList();
+    List<ContactRelation>? outgoingContactRelations = await ContactRelation()
+        .select()
+        .fromId
+        .equals(contactDetail.id)
+        .toList();
     List<ContactRelation>? incomingContactRelations =
         await ContactRelation().select().toId.equals(contactDetail.id).toList();
     FullContact fullContact = FullContact(
@@ -117,7 +121,7 @@ class ContactService {
     return newFullContact;
   }
 
-  /// Generates a list of nodes representing contacts and tags, 
+  /// Generates a list of nodes representing contacts and tags,
   /// along with their relationships, for visualization in a graph view.
   ///
   /// This method:
@@ -174,7 +178,8 @@ class ContactService {
     // ADDING RELATIONS BETWEEN THE NODES
 
     // adding the relations between contacts
-    List<ContactRelation> contactRelations = await ContactRelation().select().toList();
+    List<ContactRelation> contactRelations =
+        await ContactRelation().select().toList();
     for (var contactRelation in contactRelations) {
       Node? fromNode = contactNodeMap[contactRelation.fromId];
       Node? toNode = contactNodeMap[contactRelation.toId];
@@ -184,7 +189,8 @@ class ContactService {
     }
 
     // adding the relations from contacts to tags
-    List<ContactDetailTag> contactTagRelations = await ContactDetailTag().select().toList();
+    List<ContactDetailTag> contactTagRelations =
+        await ContactDetailTag().select().toList();
     for (var contactTagRelation in contactTagRelations) {
       Node? fromNode = contactNodeMap[contactTagRelation.ContactDetailId];
       Node? toNode = tagNodeMap[contactTagRelation.TagId];
@@ -194,6 +200,36 @@ class ContactService {
     }
 
     return nodes;
+  }
+
+  // Saves the id of the users own contact.
+  ///
+  /// This method takes an id and stores it in the shared preferences. This function will only be called once.
+  ///
+  /// - Parameter contactId: String, the contactId of the users own contact.
+  Future<void> saveOwnPhoneContactId(String phoneContactId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('own_contact_id', phoneContactId);
+  }
+
+  /// Gets the Id of the users own contact if one exists. Otherwise returns null
+  Future<String?> getOwnPhoneContactId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('own_contact_id');
+  }
+
+  /// Gets the contact object of the users own contact if one exists.
+  Future<Contact?> getOwnContact() async {
+    final phoneContactId = await getOwnPhoneContactId();
+    if (phoneContactId != null) {
+      final contacts = await getAll();
+      try {
+        return contacts.firstWhere((c) => c.id == phoneContactId);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
   }
 
   /// Creates a node representing a contact for the graph view.
