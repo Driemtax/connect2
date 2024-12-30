@@ -22,22 +22,21 @@ class FullContact {
   });
 
   // Warning the tag has to be saved in t he database already
-  void addTag(Tag tag) async {
+  Future<void> addTag(Tag tag) async {
     await ContactDetailTag(ContactDetailId: contactDetail.id, TagId: tag.id)
         .save();
-    tags.add(tag);
   }
 
   // Searches if already a tag with that tagname exists. If thats the case its going to use this tag.
   // If thats not the case it creates a new Tag with that name
-  void addTagByName(String tagName) async {
+  Future<Tag> addTagByName(String tagName) async {
     Tag? tag = await Tag().select().name.equals(tagName).toSingle();
     tag ??= await _createNewTag(tagName);
-    addTag(tag);
+    await addTag(tag);
+    return tag;
   }
 
-  void removeTag(Tag tag) async {
-    tags.remove(tag);
+  Future<void> removeTag(Tag tag) async {
     await ContactDetailTag()
         .select()
         .TagId
@@ -49,23 +48,20 @@ class FullContact {
 
   Future<ContactNote> addNewNote(String text, DateTime date) async {
     ContactNote newContactNote = await _createNewContactNode(text, date);
-    notes.add(newContactNote);
     return newContactNote;
   }
 
   void deleteNote(ContactNote note) async {
-    notes.remove(note);
     await note.delete();
   }
 
-  void addContactRelation(String name, int toContactDetailId) async {
+  Future<ContactRelation> addContactRelation(String name, int toContactDetailId) async {
     ContactRelation newContactRelation =
         await _createNewContactRelation(name, toContactDetailId);
-    outgoingContactRelations.add(newContactRelation);
+    return newContactRelation;
   }
 
   void deleteContactRelation(ContactRelation contactRelation) async {
-    outgoingContactRelations.remove(contactRelation);
     await contactRelation.delete();
   }
 

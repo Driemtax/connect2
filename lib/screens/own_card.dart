@@ -1,21 +1,24 @@
 import 'dart:io';
 import 'package:connect2/helper/contact_manager.dart';
+import 'package:connect2/model/full_contact.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 
 class OwnCardView extends StatefulWidget {
-  final int contactId;
-  const OwnCardView({Key? key, required this.contactId}) : super(key: key);
+  final String phoneContactId;
+  const OwnCardView({Key? key, required this.phoneContactId}) : super(key: key);
   @override
   // ignore: library_private_types_in_public_api
   _OwnCardViewState createState() => _OwnCardViewState();
 }
 
 class _OwnCardViewState extends State<OwnCardView> {
-  late int contactId;
+  late String phoneContactId;
   late ContactManager _contactManager;
+  FullContact? fullContact;
   bool _isLoading = true;
   late TextEditingController _residenceController;
   late TextEditingController _employerController;
@@ -34,8 +37,8 @@ class _OwnCardViewState extends State<OwnCardView> {
   @override
   void initState() {
     super.initState();
-    contactId = widget.contactId;
-    _contactManager = ContactManager.withId(contactId);
+    phoneContactId = widget.phoneContactId;
+    _contactManager = ContactManager.withId(phoneContactId);
     _initializeData();
     
   }
@@ -50,19 +53,29 @@ class _OwnCardViewState extends State<OwnCardView> {
   Future<void> _initializeData() async {
     await _contactManager.loadContactFromDatabase();
     setState(() {
-      _name = _contactManager.contactData["name"] ?? "";
-      _birthDate = _contactManager.contactData["birthDate"];
-      _residence = _contactManager.contactData["residence"] ?? "";
-      _employer = _contactManager.contactData["employer"] ?? "";
-      
-      // Set controller
+      _name = fullContact!.phoneContact.displayName;
+
+      String? date = fullContact?.phoneContact.events
+      .firstWhere(
+        (event) => event.label == EventLabel.birthday,
+        orElse: () => Event(month: 0, day: 0),
+      ).toString();
+      _birthDate = date != null ? DateTime.tryParse(date) : null;
+
+      _residence = fullContact?.phoneContact.addresses.isNotEmpty == true
+      ? fullContact!.phoneContact.addresses.first.address
+      : "";
+
+      _employer = fullContact?.phoneContact.organizations.isNotEmpty == true
+      ? fullContact!.phoneContact.organizations.first.company
+      : "";
+
+      // Controller
       _residenceController = TextEditingController(text: _residence);
       _employerController = TextEditingController(text: _employer);
 
       // Skills
-      _skills.clear();
-      final List<String> skillsFromDb = _contactManager.contactData["skills"] ?? [];
-      _skills.addAll(skillsFromDb);
+      // TODO Add SKills here
 
       _isLoading = false;
     });
@@ -78,8 +91,22 @@ class _OwnCardViewState extends State<OwnCardView> {
 
     if (pickedDate != null){
       setState(() {
-        _birthDate = pickedDate;
-        _contactManager.updateContactField('birthDate', pickedDate.toIso8601String());
+        if (fullContact != null) {
+          if (fullContact!.phoneContact.events.isNotEmpty) {
+              fullContact!.phoneContact.events.first = Event(year: pickedDate.year, 
+              month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday);
+            }
+            else {
+              fullContact!.phoneContact.events.add(Event(year: pickedDate.year, 
+              month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday));
+            }
+
+          _contactManager.updateFullContact(fullContact!);
+          _birthDate = pickedDate;
+        }
+        else {
+          throw Exception("fullContact is null");
+        }
       });
     }
   }
@@ -507,12 +534,34 @@ class _OwnCardViewState extends State<OwnCardView> {
           onChanged: (newValue) {
             setState(() {
               if (label == 'Wohnort') {
-                _residence = newValue;
-                _contactManager.updateContactField('residence', newValue);
+                if (fullContact != null) {
+                  if (fullContact!.phoneContact.addresses.isNotEmpty) {
+                    fullContact!.phoneContact.addresses.first = Address(newValue);
+                  }
+                  else {
+                    fullContact!.phoneContact.addresses.add(Address(newValue));
+                  }
+                  _contactManager.updateFullContact(fullContact!);
+                  _residence = newValue;
+                }
+                else {
+                  throw Exception('fullContact is null');
+                }
               }
               else if (label == 'Arbeitgeber / Uni') {
-                _employer = newValue;
-                _contactManager.updateContactField('employer', newValue);
+                if (fullContact != null) {
+                  if (fullContact!.phoneContact.organizations.isNotEmpty) {
+                    fullContact!.phoneContact.organizations.first.company = newValue;
+                  }
+                  else {
+                    fullContact!.phoneContact.organizations.add(Organization(company: newValue));
+                  }
+                  _contactManager.updateFullContact(fullContact!);
+                  _employer = newValue;
+                }
+                else {
+                  throw Exception('fullContact is null');
+                }
               }
             });
           },

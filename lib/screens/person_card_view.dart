@@ -1,23 +1,26 @@
 import 'dart:io';
 import 'package:connect2/helper/contact_manager.dart';
+import 'package:connect2/model/full_contact.dart';
+import 'package:connect2/model/model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:connect2/models/note.dart';
 import 'package:connect2/main.dart';
 
 class PersonCardView extends StatefulWidget {
-  final int contactId;
-  const PersonCardView({Key? key, required this.contactId}) : super(key: key);
+  final String phoneContactId;
+  const PersonCardView({Key? key, required this.phoneContactId}) : super(key: key);
   @override
   // ignore: library_private_types_in_public_api
   _PersonCardViewState createState() => _PersonCardViewState();
 }
 
 class _PersonCardViewState extends State<PersonCardView> {
-  late int contactId;
+  late String phoneContactId;
   late ContactManager _contactManager;
+  FullContact? fullContact;
   bool _isLoading = true;
   late TextEditingController _residenceController;
   late TextEditingController _employerController;
@@ -27,10 +30,7 @@ class _PersonCardViewState extends State<PersonCardView> {
   String _residence = "";
   String _employer = "";
   // Notes
-  final List<Note> _noteList = [];
-
-  // Skills
-  final List<String> _skills = [];
+  final List<ContactNote> _noteList = [];
 
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
@@ -38,8 +38,8 @@ class _PersonCardViewState extends State<PersonCardView> {
   @override
   void initState() {
     super.initState();
-    contactId = widget.contactId;
-    _contactManager = ContactManager.withId(contactId);
+    phoneContactId = widget.phoneContactId;
+    _contactManager = ContactManager.withId(phoneContactId);
     _initializeData();
     
   }
@@ -52,12 +52,32 @@ class _PersonCardViewState extends State<PersonCardView> {
   }
   
   Future<void> _initializeData() async {
-    await _contactManager.loadContactFromDatabase();
+    fullContact = await _contactManager.loadContactFromDatabase();
     setState(() {
-      _name = _contactManager.contactData["name"] ?? "";
-      _birthDate = _contactManager.contactData["birthDate"];
-      _residence = _contactManager.contactData["residence"] ?? "";
-      _employer = _contactManager.contactData["employer"] ?? "";
+      _name = fullContact!.phoneContact.displayName;
+
+      Event? birthdayEvent = fullContact?.phoneContact.events.firstWhere(
+        (event) => event.label == EventLabel.birthday,
+        orElse: () => Event(month: 0, day: 0),
+      );
+
+      if (birthdayEvent != null && birthdayEvent.year != null) {
+        _birthDate = DateTime(
+          birthdayEvent.year!,
+          birthdayEvent.month,
+          birthdayEvent.day,
+        );
+      } else {
+        _birthDate = null;
+      }
+
+      _residence = fullContact?.phoneContact.addresses.isNotEmpty == true
+      ? fullContact!.phoneContact.addresses.first.address
+      : "";
+
+      _employer = fullContact?.phoneContact.organizations.isNotEmpty == true
+      ? fullContact!.phoneContact.organizations.first.company
+      : "";
 
       // Controller
       _residenceController = TextEditingController(text: _residence);
@@ -65,19 +85,10 @@ class _PersonCardViewState extends State<PersonCardView> {
 
       // Notes
       _noteList.clear();
-      final List<Map<String, dynamic>> notesFromDb = _contactManager.contactData["notes"] ?? [];
+      final List<ContactNote> notesFromDb= fullContact!.notes;
       for (var noteData in notesFromDb) {
-        _noteList.add(Note(
-          date: noteData["date"] ?? "",
-          text: noteData["text"] ?? "",
-        ));
+        _noteList.add(noteData);
       }
-
-
-      // Skills
-      _skills.clear();
-      final List<String> skillsFromDb = _contactManager.contactData["skills"] ?? [];
-      _skills.addAll(skillsFromDb);
 
       _isLoading = false;
     });
@@ -93,39 +104,72 @@ class _PersonCardViewState extends State<PersonCardView> {
 
     if (pickedDate != null){
       setState(() {
-        _birthDate = pickedDate;
-        _contactManager.updateContactField('birthDate', pickedDate.toIso8601String());
+
+        if (fullContact != null) {
+          if (fullContact!.phoneContact.events.isNotEmpty) {
+            fullContact!.phoneContact.events.first = Event(year: pickedDate.year, 
+            month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday);
+          }
+          else {
+            fullContact!.phoneContact.events.add(Event(year: pickedDate.year, 
+            month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday));
+          }
+
+          _contactManager.updateFullContact(fullContact!);
+          _birthDate = pickedDate;
+          
+        } else {
+          throw Exception('FullContact is null');
+        }
       });
     }
   }
 
-  void _addNote(String newText) {
-    setState(() {
-      String formattedDate = DateFormat('dd.MM.yyyy').format(DateTime.now());
-      _noteList.add(Note(date: formattedDate, text: newText));
-      _contactManager.updateContactField('notes', _noteList.map((note) => note.toJson()).toList());
-    });
+  Future<void> _addNote(String newText) async {
+  if (fullContact != null) {
+    try {
+      DateTime formattedDate = DateTime.now();
+      ContactNote newNote = await fullContact!.addNewNote(newText, formattedDate);
+      setState(() {
+        _noteList.add(newNote);
+      });
+    } catch (error) {
+      throw Exception('Error while adding the note: $error');
+    }
+  } else {
+    throw Exception('FullContact is null');
   }
+}
+
 
   void _deleteNote(int index) {
     setState(() {
-      _noteList.removeAt(index);
-      _contactManager.updateContactField('notes', _noteList.map((note) => note.toJson()).toList());
+      ContactNote noteToDelete = _noteList[index];
+      if (fullContact != null) {
+        fullContact!.deleteNote(noteToDelete);
+        _noteList.remove(noteToDelete);
+      }
+      else {
+        throw Exception('FullContact is null');
+      }
     });
   }
 
-  void _addSkill(String newSkill){
-    setState(() {
-      _skills.add(newSkill);
-      _contactManager.updateContactField('skills', _skills);
-    });
+  void _addSkill(String newSkill) async {
+    if (fullContact != null) {
+      Tag newTag = await fullContact!.addTagByName(newSkill);
+      if (mounted) {
+        setState(() => fullContact!.tags.add(newTag));
+      }
+    }
   }
 
-  void _deleteSkill(int index){
-    setState(() {
-      _skills.removeAt(index);
-      _contactManager.updateContactField('skills', _skills);
-    });
+  void _deleteSkill(int index) async {
+    if (fullContact != null) {
+      Tag tagToRemove = fullContact!.tags[index];
+      fullContact!.removeTag(tagToRemove);
+      setState(() => fullContact!.tags.remove(tagToRemove));
+    }
   }
 
   /// This method shows a pop up to create a new entry to a list. This is used for the skills and the notes.
@@ -203,8 +247,9 @@ class _PersonCardViewState extends State<PersonCardView> {
         final pickedFile = await _picker.pickImage(source: source);
         if (pickedFile != null) {
           setState(() {
-            _imageFile = File(pickedFile.path);
-            _contactManager.updateContactField('imagePath', pickedFile.path);
+            // TODO Update image on phoneContact
+            // _imageFile = File(pickedFile.path);
+            // _contactManager.updateContactField('imagePath', pickedFile.path);
           });
         } else if (status.isDenied || status.isPermanentlyDenied) {
           _showPermissionDialog(source);
@@ -368,9 +413,9 @@ class _PersonCardViewState extends State<PersonCardView> {
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _skills.length,
+                    itemCount: fullContact != null ? fullContact!.tags.length : 0,
                     itemBuilder: (context, index) {
-                      final skill = _skills[index];
+                      final skill = fullContact!.tags[index];
                       return Dismissible(
                         key: UniqueKey(),
                         direction: DismissDirection.startToEnd,
@@ -389,7 +434,7 @@ class _PersonCardViewState extends State<PersonCardView> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               TextFormField(
-                                initialValue: skill,
+                                initialValue: skill.name,
                                 readOnly: true,
                                 maxLines: null,
                                 style: TextStyle(color: colorScheme.onSurfaceVariant),
@@ -427,7 +472,7 @@ class _PersonCardViewState extends State<PersonCardView> {
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _noteList.length,
                     itemBuilder: (context, index) {
-                      final notiz = _noteList[index];
+                      final note = _noteList[index];
                       return Dismissible(
                         key: UniqueKey(),
                         direction: DismissDirection.startToEnd,
@@ -446,7 +491,7 @@ class _PersonCardViewState extends State<PersonCardView> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                notiz.date,
+                                DateFormat('dd.MM.yyyy').format(note.date ?? DateTime.now()),
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: colorScheme.onSurface,
@@ -454,7 +499,7 @@ class _PersonCardViewState extends State<PersonCardView> {
                               ),
                               const SizedBox(height: 4),
                               TextFormField(
-                                initialValue: notiz.text,
+                                initialValue: note.note,
                                 readOnly: true,
                                 maxLines: null,
                                 style: TextStyle(color: colorScheme.onSurfaceVariant),
@@ -617,12 +662,34 @@ class _PersonCardViewState extends State<PersonCardView> {
           onChanged: (newValue) {
             setState(() {
               if (label == 'Wohnort') {
-                _residence = newValue;
-                _contactManager.updateContactField('residence', newValue);
+                if (fullContact != null) {
+                  if (fullContact!.phoneContact.addresses.isNotEmpty) {
+                    fullContact!.phoneContact.addresses.first = Address(newValue);
+                  }
+                  else {
+                    fullContact!.phoneContact.addresses.add(Address(newValue));
+                  }
+                  _contactManager.updateFullContact(fullContact!);
+                  _residence = newValue;
+                }
+                else {
+                  throw Exception('fullContact is null');
+                }
               }
               else if (label == 'Arbeitgeber / Uni') {
-                _employer = newValue;
-                _contactManager.updateContactField('employer', newValue);
+                if (fullContact != null) {
+                  if (fullContact!.phoneContact.organizations.isNotEmpty) {
+                    fullContact!.phoneContact.organizations.first.company = newValue;
+                  }
+                  else {
+                    fullContact!.phoneContact.organizations.add(Organization(company: newValue));
+                  }
+                  _contactManager.updateFullContact(fullContact!);
+                  _employer = newValue;
+                }
+                else {
+                  throw Exception('fullContact is null');
+                }
               }
             });
           },

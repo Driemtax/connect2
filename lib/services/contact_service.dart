@@ -89,7 +89,7 @@ class ContactService {
   /// - [fullContact]: The [FullContact] object with updated data to save.
   ///
   /// This method saves both the phone contact and the contact detail information.
-  void updateFullContact(FullContact fullContact) async {
+  Future<void> updateFullContact(FullContact fullContact) async {
     await phoneContactProvider.saveModified(fullContact.phoneContact);
     await fullContact.contactDetail.save();
   }
@@ -219,12 +219,13 @@ class ContactService {
   }
 
   /// Gets the contact object of the users own contact if one exists.
-  Future<Contact?> getOwnPhoneContact() async {
+  Future<FullContact?> getOwnPhoneContact() async {
     final phoneContactId = await getOwnPhoneContactId();
     if (phoneContactId != null) {
       final contacts = await getAll();
       try {
-        return contacts.firstWhere((c) => c.id == phoneContactId);
+        Contact? contact = contacts.firstWhere((c) => c.id == phoneContactId);
+        return getFullContact(contact.id);
       } catch (e) {
         return null;
       }
@@ -244,10 +245,9 @@ class ContactService {
       Random random, String phoneContactId) async {
     Contact phoneContact = await phoneContactProvider.get(phoneContactId);
     Node newNode = Node(
-      Offset(random.nextDouble() * 256, random.nextDouble() * 256),
-      [],
-      NodeType.node,
-      phoneContact.displayName,
+      pos: Offset(random.nextDouble() * 256, random.nextDouble() * 256),
+      name: phoneContact.displayName,
+      phoneContactId: phoneContactId,
     );
     return newNode;
   }
@@ -262,10 +262,9 @@ class ContactService {
   /// - A [Node] object.
   Node _createNodeFromTag(Random random, Tag tag) {
     Node newNode = Node(
-      Offset(random.nextDouble() * 256, random.nextDouble() * 256),
-      [],
-      NodeType.tag,
-      tag.name ?? '',
+      pos: Offset(random.nextDouble() * 256, random.nextDouble() * 256),
+      nodeType: NodeType.tag,
+      name: tag.name ?? ''
     );
     return newNode;
   }

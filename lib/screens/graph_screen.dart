@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:connect2/components/graph_view/graph_view_canvas.dart';
 import 'package:connect2/components/graph_view/node.dart';
 import 'package:connect2/services/contact_service.dart';
@@ -14,7 +12,6 @@ class GraphScreen extends StatefulWidget {
 
 class GraphScreenState extends State<GraphScreen> {
   List<Node> nodes = [];
-  Random random = Random();
   ContactService contactService = ContactService();
 
   @override
@@ -24,20 +21,14 @@ class GraphScreenState extends State<GraphScreen> {
   }
 
   void _initNodes() async {
-    // Asynchron auf neue Nodes warten
     final newNodes = await contactService.getGraphViewNodes();
-
-    // setState synchron aufrufen
     if (mounted) {
-      setState(() {
-        nodes = newNodes;
-      });
+      setState(() => nodes = newNodes);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // TODO develop pretty empty state
     if (nodes.isEmpty) {
       return const Scaffold(body: Center(child: Text("Loading...")));
     }

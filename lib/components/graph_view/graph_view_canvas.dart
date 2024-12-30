@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:connect2/components/graph_view/force_directed_graph_algorithm.dart';
 import 'package:connect2/components/graph_view/node.dart';
-import 'package:connect2/screens/dummy_person.dart';
+import 'package:connect2/screens/person_card_view.dart';
 import 'package:flutter/material.dart';
 
 class GraphViewCanvas extends StatefulWidget {
@@ -24,8 +24,10 @@ class GraphViewCanvasState extends State<GraphViewCanvas> {
   void initState() {
     super.initState();
     nodes = List.from(widget.initialNodes);
-    Node centerForce =
-        Node(const Offset(150.0, 300.0), [], NodeType.centerNode, '');
+    Node centerForce = Node(
+      pos: const Offset(150.0, 300.0),
+      nodeType: NodeType.centerNode,
+    );
     for (var node in nodes) {
       connectNodes(node, centerForce);
     }
@@ -47,12 +49,12 @@ class GraphViewCanvasState extends State<GraphViewCanvas> {
   }
 
   void handleNodeTap(Node tappedNode) {
-    if (tappedNode.nodeType == NodeType.node) {
-      // TODO Change this route to the real person routeee!
+    String? phoneContactId = tappedNode.phoneContactId;
+    if (tappedNode.nodeType == NodeType.node && phoneContactId != null) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => DummyPersonView(name: tappedNode.name),
+          builder: (context) => PersonCardView(phoneContactId: phoneContactId,),
         ),
       );
     }

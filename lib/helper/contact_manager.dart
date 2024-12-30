@@ -1,16 +1,18 @@
 import 'dart:async';
 
-import 'package:connect2/services/contacts_service.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:connect2/model/full_contact.dart';
+import 'package:connect2/services/contact_service.dart';
 
 class ContactManager {
-  final int contactId;
+  final String phoneContactId;
+  final ContactService _service = ContactService();
   Map<String, dynamic> contactData = {};
+  FullContact? contact;
   Timer? _debounceTimer;
 
-  ContactManager(this.contactId, this.contactData);
+  ContactManager(this.phoneContactId, this.contactData);
 
-  ContactManager.withId(this.contactId) {
+  ContactManager.withId(this.phoneContactId) {
     contactData = {};
   }
 
@@ -24,35 +26,24 @@ class ContactManager {
     });
   }
 
+  void updateFullContact(FullContact updatedContact) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(seconds: 3), () {
+      _service.updateFullContact(updatedContact);
+    });
+  }
+
   Future<void> _saveContactToDatabase() async {
     // TODO Update database here
-    Contact updatedContact = Contact();
-    updatedContact.id = contactId.toString();
-    updatedContact.name.first = contactData["name"];
-    updatedContact.addresses.first = Address(contactData["residence"]);
-    updatedContact.organizations.first = contactData["employer"];
 
-    // Save updated Contact to phone contacts
-    saveModifiedContact(updatedContact);
     // await database.update(contactId, contactData);
   }
 
-  Future<void> loadContactFromDatabase() async {
-  // Simuliere das Laden von Daten aus der Datenbank
-  await Future.delayed(const Duration(seconds: 1)); // Simulates Loading Time for now
-  Contact contact = await getContact(contactId.toString());
-  contactData = {
-    "name": contact.name.first,
-    "birthDate": DateTime(1990, 1, 1),
-    "residence": "Berlin",
-    "employer": "TechCorp",
-    "skills": ["C", "Design"],
-  };
-}
+  Future<FullContact> loadContactFromDatabase() async {
+    // Simuliere das Laden von Daten aus der Datenbank
+    await Future.delayed(const Duration(seconds: 1)); // Simulates Loading Time for now
+    FullContact contact = await _service.getFullContact(phoneContactId);
 
-  // Keep if we also want to save manually via button
-  Future<void> saveManually() async {
-    _debounceTimer?.cancel();
-    await _saveContactToDatabase();
+    return contact;
   }
 }
