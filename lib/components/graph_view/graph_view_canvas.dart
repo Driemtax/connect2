@@ -18,6 +18,8 @@ class GraphViewCanvasState extends State<GraphViewCanvas> {
   Random random = Random();
   Timer? _timer;
 
+  Offset graphOffset = Offset.zero;
+
   @override
   void initState() {
     super.initState();
@@ -46,11 +48,24 @@ class GraphViewCanvasState extends State<GraphViewCanvas> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: CustomPaint(
-        size: const Size(300, 600),
-        painter: GraphPainter(nodes, Theme.of(context).primaryColor,
-            Theme.of(context).focusColor, random, Theme.of(context).primaryColorDark),
+    return GestureDetector(
+      onPanUpdate: (details) {
+        setState(() {
+          graphOffset += details.delta; // Update the offset
+        });
+      },
+      child: Center(
+        child: CustomPaint(
+          size: const Size(300, 600),
+          painter: GraphPainter(
+            nodes,
+            Theme.of(context).primaryColor,
+            Theme.of(context).focusColor,
+            random,
+            Theme.of(context).primaryColorDark,
+            graphOffset,
+          ),
+        ),
       ),
     );
   }
@@ -61,9 +76,11 @@ class GraphPainter extends CustomPainter {
   final Color nodeColor;
   final Color tagColor;
   final Color edgeColor;
-  Random random;
+  final Random random;
+  final Offset graphOffset;
 
-  GraphPainter(this.nodes, this.nodeColor, this.edgeColor, this.random, this.tagColor);
+  GraphPainter(this.nodes, this.nodeColor, this.edgeColor, this.random,
+      this.tagColor, this.graphOffset);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -97,17 +114,21 @@ class GraphPainter extends CustomPainter {
         minWidth: 0,
         maxWidth: size.width,
       );
+
       for (var toNode in node.edgesTo) {
-        if (toNode.nodeType != NodeType.centerNode && node.nodeType != NodeType.centerNode) {
-          canvas.drawLine(node.pos, toNode.pos, edgePaint);
+        if (toNode.nodeType != NodeType.centerNode &&
+            node.nodeType != NodeType.centerNode) {
+          canvas.drawLine(
+              node.pos + graphOffset, toNode.pos + graphOffset, edgePaint);
         }
       }
       if (node.nodeType != NodeType.centerNode) {
-        canvas.drawCircle(node.pos, 5, node.nodeType == NodeType.node ? nodePaint : tagPaint);
+        canvas.drawCircle(node.pos + graphOffset, 5,
+            node.nodeType == NodeType.node ? nodePaint : tagPaint);
         textPainter.paint(
             canvas,
-            Offset(node.pos.dx - (textPainter.size.width / 2),
-                node.pos.dy - 17.5));
+            Offset(node.pos.dx + graphOffset.dx - (textPainter.size.width / 2),
+                node.pos.dy + graphOffset.dy - 17.5));
       }
     }
   }
