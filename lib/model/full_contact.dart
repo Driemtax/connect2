@@ -36,7 +36,7 @@ class FullContact {
     return tag;
   }
 
-  void removeTag(Tag tag) async {
+  Future<void> removeTag(Tag tag) async {
     await ContactDetailTag()
         .select()
         .TagId

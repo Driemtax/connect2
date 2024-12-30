@@ -32,9 +32,6 @@ class _PersonCardViewState extends State<PersonCardView> {
   // Notes
   final List<ContactNote> _noteList = [];
 
-  // Skills
-  final List<String> _skills = [];
-
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
 
@@ -84,13 +81,6 @@ class _PersonCardViewState extends State<PersonCardView> {
         _noteList.add(noteData);
       }
 
-
-      // Skills
-      // TODO Check where new skill list is and how to get
-      // _skills.clear();
-      // final List<String> skillsFromDb = _contactManager.contactData["skills"] ?? [];
-      // _skills.addAll(skillsFromDb);
-
       _isLoading = false;
     });
   }
@@ -130,11 +120,7 @@ class _PersonCardViewState extends State<PersonCardView> {
   if (fullContact != null) {
     try {
       DateTime formattedDate = DateTime.now();
-
       ContactNote newNote = await fullContact!.addNewNote(newText, formattedDate);
-
-      _contactManager.updateFullContact(fullContact!);
-
       setState(() {
         _noteList.add(newNote);
       });
@@ -152,7 +138,6 @@ class _PersonCardViewState extends State<PersonCardView> {
       ContactNote noteToDelete = _noteList[index];
       if (fullContact != null) {
         fullContact!.deleteNote(noteToDelete);
-        _contactManager.updateFullContact(fullContact!);
         _noteList.remove(noteToDelete);
       }
       else {
@@ -161,18 +146,21 @@ class _PersonCardViewState extends State<PersonCardView> {
     });
   }
 
-  void _addSkill(String newSkill){
-    setState(() {
-      _skills.add(newSkill);
-      _contactManager.updateContactField('skills', _skills);
-    });
+  void _addSkill(String newSkill) async {
+    if (fullContact != null) {
+      Tag newTag = await fullContact!.addTagByName(newSkill);
+      if (mounted) {
+        setState(() => fullContact!.tags.add(newTag));
+      }
+    }
   }
 
-  void _deleteSkill(int index){
-    setState(() {
-      _skills.removeAt(index);
-      _contactManager.updateContactField('skills', _skills);
-    });
+  void _deleteSkill(int index) async {
+    if (fullContact != null) {
+      Tag tagToRemove = fullContact!.tags[index];
+      fullContact!.removeTag(tagToRemove);
+      setState(() => fullContact!.tags.remove(tagToRemove));
+    }
   }
 
   /// This method shows a pop up to create a new entry to a list. This is used for the skills and the notes.
@@ -416,9 +404,9 @@ class _PersonCardViewState extends State<PersonCardView> {
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _skills.length,
+                    itemCount: fullContact != null ? fullContact!.tags.length : 0,
                     itemBuilder: (context, index) {
-                      final skill = _skills[index];
+                      final skill = fullContact!.tags[index];
                       return Dismissible(
                         key: UniqueKey(),
                         direction: DismissDirection.startToEnd,
@@ -437,7 +425,7 @@ class _PersonCardViewState extends State<PersonCardView> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               TextFormField(
-                                initialValue: skill,
+                                initialValue: skill.name,
                                 readOnly: true,
                                 maxLines: null,
                                 style: TextStyle(color: colorScheme.onSurfaceVariant),
