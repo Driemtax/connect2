@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 import 'package:connect2/helper/contact_manager.dart';
 import 'package:connect2/model/full_contact.dart';
 import 'package:connect2/model/model.dart';
@@ -57,8 +56,6 @@ class _PersonCardViewState extends State<PersonCardView> {
   
   Future<void> _initializeData() async {
     fullContact = await _contactManager.loadContactFromDatabase();
-    String testName = fullContact!.phoneContact.displayName;
-    print("FullContact after DB load: $testName");
     setState(() {
       _name = fullContact!.phoneContact.displayName;
 
@@ -68,10 +65,6 @@ class _PersonCardViewState extends State<PersonCardView> {
         orElse: () => Event(month: 0, day: 0),
       ).toString();
       _birthDate = date != null ? DateTime.tryParse(date) : null;
-      print("\n");
-      print("PhoneDate: $date");
-      print("birthdate: $_birthDate");
-
       _residence = fullContact?.phoneContact.addresses.isNotEmpty == true
       ? fullContact!.phoneContact.addresses.first.address
       : "";
@@ -124,7 +117,7 @@ class _PersonCardViewState extends State<PersonCardView> {
           }
 
           _contactManager.updateFullContact(fullContact!);
-            _birthDate = DateTime(pickedDate.year, pickedDate.month, pickedDate.day);
+          _birthDate = pickedDate;
           
         } else {
           throw Exception('FullContact is null');
