@@ -25,7 +25,7 @@ const tableContactDetail = SqfEntityTable(
   primaryKeyName: 'id',
   primaryKeyType: PrimaryKeyType.integer_auto_incremental,
   fields: [
-    SqfEntityField('phoneContactId', DbType.text),
+    SqfEntityField('phoneContactId', DbType.text, isNotNull: true),
   ],
 );
 
@@ -50,8 +50,8 @@ const tableContactRelation = SqfEntityTable(
   primaryKeyType: PrimaryKeyType.integer_auto_incremental,
   fields: [
     SqfEntityField('name', DbType.text),
-    SqfEntityField('from', DbType.integer, isNotNull: true),
-    SqfEntityField('to', DbType.integer, isNotNull: true)
+    SqfEntityField('fromId', DbType.integer, isNotNull: true),
+    SqfEntityField('toId', DbType.integer, isNotNull: true)
   ],
 );
 

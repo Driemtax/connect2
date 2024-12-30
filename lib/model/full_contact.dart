@@ -74,8 +74,8 @@ class FullContact {
   ) async {
     int? newContactRelationId = await ContactRelation(
       name: name,
-      from: contactDetail.id,
-      to: toContactDetailId,
+      fromId: contactDetail.id,
+      toId: toContactDetailId,
     ).save();
     if (newContactRelationId != null) {
       ContactRelation? newContactRelation =

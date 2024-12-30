@@ -55,7 +55,7 @@ class TableContactDetail extends SqfEntityTableBase {
 
     // declare fields
     fields = [
-      SqfEntityFieldBase('phoneContactId', DbType.text),
+      SqfEntityFieldBase('phoneContactId', DbType.text, isNotNull: true),
     ];
     super.init();
   }
@@ -105,8 +105,8 @@ class TableContactRelation extends SqfEntityTableBase {
     // declare fields
     fields = [
       SqfEntityFieldBase('name', DbType.text),
-      SqfEntityFieldBase('from', DbType.integer, isNotNull: true),
-      SqfEntityFieldBase('to', DbType.integer, isNotNull: true),
+      SqfEntityFieldBase('fromId', DbType.integer, isNotNull: true),
+      SqfEntityFieldBase('toId', DbType.integer, isNotNull: true),
     ];
     super.init();
   }
@@ -2837,14 +2837,14 @@ class ContactNoteManager extends SqfEntityProvider {
 //endregion ContactNoteManager
 // region ContactRelation
 class ContactRelation extends TableBase {
-  ContactRelation({this.id, this.name, this.from, this.to}) {
+  ContactRelation({this.id, this.name, this.fromId, this.toId}) {
     _setDefaultValues();
     softDeleteActivated = false;
   }
-  ContactRelation.withFields(this.name, this.from, this.to) {
+  ContactRelation.withFields(this.name, this.fromId, this.toId) {
     _setDefaultValues();
   }
-  ContactRelation.withId(this.id, this.name, this.from, this.to) {
+  ContactRelation.withId(this.id, this.name, this.fromId, this.toId) {
     _setDefaultValues();
   }
   // fromMap v2.0
@@ -2857,18 +2857,18 @@ class ContactRelation extends TableBase {
     if (o['name'] != null) {
       name = o['name'].toString();
     }
-    if (o['from'] != null) {
-      from = int.tryParse(o['from'].toString());
+    if (o['fromId'] != null) {
+      fromId = int.tryParse(o['fromId'].toString());
     }
-    if (o['to'] != null) {
-      to = int.tryParse(o['to'].toString());
+    if (o['toId'] != null) {
+      toId = int.tryParse(o['toId'].toString());
     }
   }
   // FIELDS (ContactRelation)
   int? id;
   String? name;
-  int? from;
-  int? to;
+  int? fromId;
+  int? toId;
 
   // end FIELDS (ContactRelation)
 
@@ -2889,11 +2889,11 @@ class ContactRelation extends TableBase {
     if (name != null || !forView) {
       map['name'] = name;
     }
-    if (from != null || !forView) {
-      map['from'] = from;
+    if (fromId != null || !forView) {
+      map['fromId'] = fromId;
     }
-    if (to != null || !forView) {
-      map['to'] = to;
+    if (toId != null || !forView) {
+      map['toId'] = toId;
     }
 
     return map;
@@ -2909,11 +2909,11 @@ class ContactRelation extends TableBase {
     if (name != null || !forView) {
       map['name'] = name;
     }
-    if (from != null || !forView) {
-      map['from'] = from;
+    if (fromId != null || !forView) {
+      map['fromId'] = fromId;
     }
-    if (to != null || !forView) {
-      map['to'] = to;
+    if (toId != null || !forView) {
+      map['toId'] = toId;
     }
 
     return map;
@@ -2933,12 +2933,12 @@ class ContactRelation extends TableBase {
 
   @override
   List<dynamic> toArgs() {
-    return [name, from, to];
+    return [name, fromId, toId];
   }
 
   @override
   List<dynamic> toArgsWithIds() {
-    return [id, name, from, to];
+    return [id, name, fromId, toId];
   }
 
   static Future<List<ContactRelation>?> fromWebUrl(Uri uri,
@@ -3087,8 +3087,8 @@ class ContactRelation extends TableBase {
   Future<int?> upsert({bool ignoreBatch = true}) async {
     try {
       final result = await _mnContactRelation.rawInsert(
-          'INSERT OR REPLACE INTO ContactRelation (id, name, from, to)  VALUES (?,?,?,?)',
-          [id, name, from, to],
+          'INSERT OR REPLACE INTO ContactRelation (id, name, fromId, toId)  VALUES (?,?,?,?)',
+          [id, name, fromId, toId],
           ignoreBatch);
       if (result! > 0) {
         saveResult = BoolResult(
@@ -3115,7 +3115,7 @@ class ContactRelation extends TableBase {
   Future<BoolCommitResult> upsertAll(List<ContactRelation> contactrelations,
       {bool? exclusive, bool? noResult, bool? continueOnError}) async {
     final results = await _mnContactRelation.rawInsertAll(
-        'INSERT OR REPLACE INTO ContactRelation (id, name, from, to)  VALUES (?,?,?,?)',
+        'INSERT OR REPLACE INTO ContactRelation (id, name, fromId, toId)  VALUES (?,?,?,?)',
         contactrelations,
         exclusive: exclusive,
         noResult: noResult,
@@ -3381,14 +3381,14 @@ class ContactRelationFilterBuilder extends ConjunctionBase {
     return _name = _setField(_name, 'name', DbType.text);
   }
 
-  ContactRelationField? _from;
-  ContactRelationField get from {
-    return _from = _setField(_from, 'from', DbType.integer);
+  ContactRelationField? _fromId;
+  ContactRelationField get fromId {
+    return _fromId = _setField(_fromId, 'fromId', DbType.integer);
   }
 
-  ContactRelationField? _to;
-  ContactRelationField get to {
-    return _to = _setField(_to, 'to', DbType.integer);
+  ContactRelationField? _toId;
+  ContactRelationField get toId {
+    return _toId = _setField(_toId, 'toId', DbType.integer);
   }
 
   /// Deletes List<ContactRelation> bulk by query
@@ -3623,15 +3623,16 @@ class ContactRelationFields {
     return _fName = _fName ?? SqlSyntax.setField(_fName, 'name', DbType.text);
   }
 
-  static TableField? _fFrom;
-  static TableField get from {
-    return _fFrom =
-        _fFrom ?? SqlSyntax.setField(_fFrom, 'from', DbType.integer);
+  static TableField? _fFromId;
+  static TableField get fromId {
+    return _fFromId =
+        _fFromId ?? SqlSyntax.setField(_fFromId, 'fromId', DbType.integer);
   }
 
-  static TableField? _fTo;
-  static TableField get to {
-    return _fTo = _fTo ?? SqlSyntax.setField(_fTo, 'to', DbType.integer);
+  static TableField? _fToId;
+  static TableField get toId {
+    return _fToId =
+        _fToId ?? SqlSyntax.setField(_fToId, 'toId', DbType.integer);
   }
 }
 // endregion ContactRelationFields

@@ -23,7 +23,7 @@ class GraphViewCanvasState extends State<GraphViewCanvas> {
     super.initState();
     nodes = List.from(widget.initialNodes);
     Node centerForce =
-        Node(const Offset(150.0, 300.0), [], true, "Center Force");
+        Node(const Offset(150.0, 300.0), [], NodeType.centerNode, '');
     for (var node in nodes) {
       connectNodes(node, centerForce);
     }
@@ -50,7 +50,7 @@ class GraphViewCanvasState extends State<GraphViewCanvas> {
       child: CustomPaint(
         size: const Size(300, 600),
         painter: GraphPainter(nodes, Theme.of(context).primaryColor,
-            Theme.of(context).focusColor, random),
+            Theme.of(context).focusColor, random, Theme.of(context).primaryColorDark),
       ),
     );
   }
@@ -59,15 +59,21 @@ class GraphViewCanvasState extends State<GraphViewCanvas> {
 class GraphPainter extends CustomPainter {
   final List<Node> nodes;
   final Color nodeColor;
+  final Color tagColor;
   final Color edgeColor;
   Random random;
 
-  GraphPainter(this.nodes, this.nodeColor, this.edgeColor, this.random);
+  GraphPainter(this.nodes, this.nodeColor, this.edgeColor, this.random, this.tagColor);
 
   @override
   void paint(Canvas canvas, Size size) {
     final nodePaint = Paint()
       ..color = nodeColor
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 5.0;
+
+    final tagPaint = Paint()
+      ..color = tagColor
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 5.0;
 
@@ -92,12 +98,12 @@ class GraphPainter extends CustomPainter {
         maxWidth: size.width,
       );
       for (var toNode in node.edgesTo) {
-        if (!toNode.centerNode && !node.centerNode) {
+        if (toNode.nodeType != NodeType.centerNode && node.nodeType != NodeType.centerNode) {
           canvas.drawLine(node.pos, toNode.pos, edgePaint);
         }
       }
-      if (!node.centerNode) {
-        canvas.drawCircle(node.pos, 5, nodePaint);
+      if (node.nodeType != NodeType.centerNode) {
+        canvas.drawCircle(node.pos, 5, node.nodeType == NodeType.node ? nodePaint : tagPaint);
         textPainter.paint(
             canvas,
             Offset(node.pos.dx - (textPainter.size.width / 2),
