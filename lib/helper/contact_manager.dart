@@ -17,17 +17,6 @@ class ContactManager {
     contactData = {};
   }
 
-  // Method will be called on every change
-  // TODO Delete method, when no references anymore
-  void updateContactField(String field, dynamic value) {
-    contactData[field] = value;
-
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(seconds: 3), () {
-      
-    });
-  }
-
   void updateDebouncing(FullContact updatedContact) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(seconds: 3), () {
