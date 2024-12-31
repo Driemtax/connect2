@@ -22,7 +22,8 @@
         "employer/uni": "Employer / University",
         "skills": "Skills",
         "notes": "Notes",
-        "gen_info": "General Information"
+        "gen_info": "General Information",
+        "snackbar_no_permission": "No permission granted for {source}"
     },
     "own_card":{
         "add_skill": "Add a skill",

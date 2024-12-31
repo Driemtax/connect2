@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
       ],
-      supportedLocales: [
+      supportedLocales: const[
         Locale('en', '')
       ],
       theme: ThemeData(

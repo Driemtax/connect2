@@ -218,7 +218,15 @@ class _PersonCardViewState extends State<PersonCardView> {
     else {
       ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Keine Berechtigung für ${source == ImageSource.camera ? "Kamera" : "Galerie"} erteilt.'),
+        content: Text(FlutterI18n.translate(context, 
+                                            "person_view.snackbar_no_permission",
+                                            translationParams:{
+                                                      "source": source == ImageSource.camera 
+                                                      ? FlutterI18n.translate(context, "person_view.camera") 
+                                                      : FlutterI18n.translate(context, "person_view.gallery"),
+                                                              },
+                                            ),
+                      ),
       ),
     );
     }    
