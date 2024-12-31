@@ -8,18 +8,17 @@ class FullContact {
   List<ContactNote> notes;
   // Relations that have been defined from this contact to others
   List<ContactRelation> outgoingContactRelations;
-  // Relations that 
+  // Relations that
   List<ContactRelation> incomingContactRelations;
   Contact phoneContact;
 
-  FullContact({
-    required this.tags,
-    required this.contactDetail,
-    required this.phoneContact,
-    required this.notes,
-    required this.outgoingContactRelations,
-    required this.incomingContactRelations
-  });
+  FullContact(
+      {required this.tags,
+      required this.contactDetail,
+      required this.phoneContact,
+      required this.notes,
+      required this.outgoingContactRelations,
+      required this.incomingContactRelations});
 
   // Warning the tag has to be saved in t he database already
   Future<void> addTag(Tag tag) async {
@@ -41,6 +40,7 @@ class FullContact {
         .select()
         .TagId
         .equals(tag.id)
+        .and
         .ContactDetailId
         .equals(contactDetail.id)
         .delete();
@@ -55,7 +55,8 @@ class FullContact {
     await note.delete();
   }
 
-  Future<ContactRelation> addContactRelation(String name, int toContactDetailId) async {
+  Future<ContactRelation> addContactRelation(
+      String name, int toContactDetailId) async {
     ContactRelation newContactRelation =
         await _createNewContactRelation(name, toContactDetailId);
     return newContactRelation;

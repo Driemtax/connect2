@@ -149,16 +149,13 @@ class _PersonCardViewState extends State<PersonCardView> {
 
 
   void _deleteNote(int index) {
-    setState(() {
+    if (fullContact != null) {
       ContactNote noteToDelete = _noteList[index];
-      if (fullContact != null) {
-        fullContact!.deleteNote(noteToDelete);
+      fullContact!.deleteNote(noteToDelete);
+      setState(() {
         _noteList.remove(noteToDelete);
-      }
-      else {
-        throw Exception('FullContact is null');
-      }
-    });
+      });
+    }
   }
 
   void _addSkill(String newSkill) async {
