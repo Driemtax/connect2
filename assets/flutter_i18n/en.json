@@ -27,6 +27,19 @@
     "own_card":{
         "add_skill": "Add a skill",
         "add_new_skill": "Add a new skill"
+    },
+    "home_view":{
+        "import_QR": "Import from QR-Code",
+        "create_manuall": "Create manually",
+        "reset_data": "Reset contacts",
+        "new_contact": "New contact",
+        "enter_name": "Enter name",
+        "cancel": "Cancel",
+        "save": "Save",
+        "contact_permission_required": "Give permissions to laod contacts",
+        "no_name": "No name",
+        "show_menu": "Display menu",
+        "no_contacts_found": "No contacts were found"
     }
 }
 
