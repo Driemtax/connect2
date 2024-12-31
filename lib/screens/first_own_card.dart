@@ -125,16 +125,16 @@ class _OwnContactViewState extends State<OwnContactView> {
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    title: const Text('Was ist das?'),
-                    content: const Text(
-                      'Wählen Sie hier Ihren eigenen Kontakt aus der Liste aus oder erstellen Sie einen neuen Kontakt. Dies ist nur einmalig erforderlich.',
+                    title: Text(FlutterI18n.translate(context, "first_own_card.what_is_this")),
+                    content: Text(
+                        FlutterI18n.translate(context, "first_own_card.what_is_this_explaination")
                     ),
                     actions: [
                       TextButton(
                         onPressed: () {
                           Navigator.of(context).pop();
                         },
-                        child: const Text('OK'),
+                        child: Text(FlutterI18n.translate(context, "first_own_card.ok")),
                       ),
                     ],
                   );

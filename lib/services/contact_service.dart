@@ -152,12 +152,15 @@ class ContactService {
     final contactDetailNodeFutures = contactDetails.map((contactDetail) async {
       String? phoneContactId = contactDetail.phoneContactId;
       if (phoneContactId != null) {
-        Node newNode = await _createNodeFromContact(random, phoneContactId);
-        int? contactDetailId = contactDetail.id;
-        if (contactDetailId != null) {
-          contactNodeMap[contactDetailId] = newNode;
-          nodes.add(newNode);
-        }
+        Node? newNode;
+        try {
+          newNode = await _createNodeFromContact(random, phoneContactId);
+          int? contactDetailId = contactDetail.id;
+          if (contactDetailId != null) {
+            contactNodeMap[contactDetailId] = newNode;
+            nodes.add(newNode);
+          }
+        } catch (e) {}
       }
     });
 

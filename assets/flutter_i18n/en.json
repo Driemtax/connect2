@@ -55,7 +55,10 @@
         "save": "Save",
         "select_own_contact": "Select your own contact",
         "existing_contact": "Use existing contact",
-        "create_new": "Create a new contact"
+        "create_new": "Create a new contact",
+        "what_is_this": "What is this?",
+        "what_is_this_explaination": "Select your own contact from the list or create a new contact. This is only required once.",
+        "ok": "Ok"
     },
     "contact_realtion_widget":{
         "add_realtion":"Add contact realation"
