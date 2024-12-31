@@ -239,42 +239,38 @@ class _PersonCardViewState extends State<PersonCardView> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    PermissionStatus status;
+  PermissionStatus status;
 
-    if (source == ImageSource.camera){
-      status = await Permission.camera.request();
-    }
-    else {
-      status = await Permission.photos.request();
-    }
+  if (source == ImageSource.camera) {
+    status = await Permission.camera.request();
+  } else {
+    status = await Permission.photos.request();
+  }
 
-    if (status.isGranted){
-      try {
-        final pickedFile = await _picker.pickImage(source: source);
-        if (pickedFile != null) {
-          setState(() {
-            File imageFile = File(pickedFile.path);
-            _image = Image.file(imageFile, fit: BoxFit.cover);
-            _contactManager.saveImageToContact(imageFile, fullContact!);
-          });
-        } else if (status.isDenied || status.isPermanentlyDenied) {
-          _showPermissionDialog(source);
-        }
-      } catch (e) {
-        print("Fehler beim Aufnehmen oder Laden des Bildes: $e");
+  if (status.isGranted) {
+    try {
+      final pickedFile = await _picker.pickImage(source: source);
+      if (pickedFile != null) {
+        setState(() {
+          File imageFile = File(pickedFile.path);
+          _image = Image.file(imageFile, fit: BoxFit.cover);
+          _contactManager.saveImageToContact(imageFile, fullContact!);
+        });
       }
+    } catch (e) {
+      print("Error while recording or loading the picture: $e");
     }
-    else if (status.isDenied || status.isPermanentlyDenied) {
-          _showPermissionDialog(source);
-        }
-    else {
-      ScaffoldMessenger.of(context).showSnackBar(
+  } else if (status.isDenied || status.isPermanentlyDenied) {
+    _showPermissionDialog(source);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Keine Berechtigung für ${source == ImageSource.camera ? "Kamera" : "Galerie"} erteilt.'),
       ),
     );
-    }    
   }
+}
+
   
   void _showPermissionDialog(ImageSource source) {
   showDialog(
