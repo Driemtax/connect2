@@ -14,6 +14,7 @@
 3. **Graph View**: Visualize all contacts as a graph with connections based on defined relationships, showcasing shared and unique skills.
 4. **Own Contact View**: Easily designate one contact as your own for quick access.
 
+- **Hint** Easily delete list items by swiping them to the side
 ---
 
 ## Getting Started
