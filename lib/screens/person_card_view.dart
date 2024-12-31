@@ -540,13 +540,13 @@ class _PersonCardViewState extends State<PersonCardView> {
 
               _buildInfoCard(
                 colorScheme,
-                'Kontakt Relationen',
+                FlutterI18n.translate(context, "person_view.contact_relation"),
                 [
                   SizedBox(
                     width: double.infinity,
                     child: fullContact != null
                         ? ContactRelationWidget(fullContact: fullContact!)
-                        : const Text('Loading...'),
+                        : Text(FlutterI18n.translate(context, "graph_screen.loading")),
                   ),
                 ],
               )

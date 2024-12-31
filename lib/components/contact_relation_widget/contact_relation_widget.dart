@@ -4,6 +4,7 @@ import 'package:connect2/model/full_contact.dart';
 import 'package:connect2/model/model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:flutter_i18n/flutter_i18n.dart';
 
 class ContactRelationWidget extends StatefulWidget {
   final FullContact fullContact;
@@ -69,7 +70,7 @@ class ContactRelationWidgetState extends State<ContactRelationWidget> {
           child: ElevatedButton.icon(
             onPressed: () => _openContactPickerModal(context),
             icon: const Icon(Icons.add),
-            label: const Text('Add Contact Relation'),
+            label: Text(FlutterI18n.translate(context, "contact_realtion_widget.add_realtion")),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 48),
               textStyle: const TextStyle(fontSize: 16),

@@ -56,7 +56,7 @@ class HomeContentState extends State<HomeContent> {
             ),
             ListTile(
               leading: const Icon(Icons.delete),
-              title: Text(FlutterI18n.translate(context, "home_view.reset_data")),
+              title: Text(FlutterI18n.translate(context, "home_view.reset_own_data")),
               onTap: () async {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(

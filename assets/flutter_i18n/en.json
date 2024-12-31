@@ -23,7 +23,8 @@
         "skills": "Skills",
         "notes": "Notes",
         "gen_info": "General Information",
-        "snackbar_no_permission": "No permission granted for {source}"
+        "snackbar_no_permission": "No permission granted for {source}",
+        "contact_relation": "Contact relation"
     },
     "own_card":{
         "add_skill": "Add a skill",
@@ -32,7 +33,8 @@
     "home_view":{
         "import_QR": "Import from QR-Code",
         "create_manuall": "Create manually",
-        "reset_data": "Reset contacts",
+        "reset_own_data": "Reset your own card",
+        "reset_own_data_success": "Successfully reseted",
         "new_contact": "New contact",
         "enter_name": "Enter name",
         "cancel": "Cancel",
@@ -54,6 +56,9 @@
         "select_own_contact": "Select your own contact",
         "existing_contact": "Use existing contact",
         "create_new": "Create a new contact"
+    },
+    "contact_realtion_widget":{
+        "add_realtion":"Add contact realation"
     }
 }
 
