@@ -5,7 +5,9 @@ import 'package:connect2/screens/home_view.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 
-void main() {
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -88,14 +90,13 @@ class _MyHomePageState extends State<MyHomePage> {
         onDestinationSelected: _onItemTapped,  
         indicatorColor: Theme.of(context).colorScheme.inversePrimary,
         destinations: <Widget>[
-          NavigationDestination(
-            selectedIcon: Icon(Icons.home),
-            icon: Icon(Icons.home_outlined),
-            label: FlutterI18n.translate(context, "main.navbar_home"),
+          const NavigationDestination(
+            icon: Icon(Icons.home),
+            label: 'Home',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.network_cell),
-            label: FlutterI18n.translate(context, "main.navbar_graph"),
+          const NavigationDestination(
+            icon: Icon(Icons.device_hub),
+            label: 'Graph',
           ),
           NavigationDestination(
             icon: Icon(Icons.person),

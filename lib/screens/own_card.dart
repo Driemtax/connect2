@@ -1,22 +1,26 @@
 import 'dart:io';
 import 'package:connect2/helper/contact_manager.dart';
+import 'package:connect2/model/full_contact.dart';
+import 'package:connect2/model/model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 
 class OwnCardView extends StatefulWidget {
-  final int contactId;
-  const OwnCardView({Key? key, required this.contactId}) : super(key: key);
+  final String phoneContactId;
+  const OwnCardView({Key? key, required this.phoneContactId}) : super(key: key);
   @override
   // ignore: library_private_types_in_public_api
   _OwnCardViewState createState() => _OwnCardViewState();
 }
 
 class _OwnCardViewState extends State<OwnCardView> {
-  late int contactId;
+  late String phoneContactId;
   late ContactManager _contactManager;
+  FullContact? fullContact;
   bool _isLoading = true;
   late TextEditingController _residenceController;
   late TextEditingController _employerController;
@@ -26,17 +30,14 @@ class _OwnCardViewState extends State<OwnCardView> {
   String _residence = "";
   String _employer = "";
 
-  // Skills
-  final List<String> _skills = [];
-
-  File? _imageFile;
+  Image? _image;
   final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
-    contactId = widget.contactId;
-    _contactManager = ContactManager.withId(contactId);
+    phoneContactId = widget.phoneContactId;
+    _contactManager = ContactManager.withId(phoneContactId);
     _initializeData();
     
   }
@@ -49,27 +50,45 @@ class _OwnCardViewState extends State<OwnCardView> {
   }
 
   Future<void> _initializeData() async {
-    await _contactManager.loadContactFromDatabase();
+    fullContact = await _contactManager.loadContactFromDatabase();
     setState(() {
-      _name = _contactManager.contactData["name"] ?? "";
-      _birthDate = _contactManager.contactData["birthDate"];
-      _residence = _contactManager.contactData["residence"] ?? "";
-      _employer = _contactManager.contactData["employer"] ?? "";
-      
-      // Set controller
+      _name = fullContact!.phoneContact.displayName;
+
+      Event? birthdayEvent = fullContact?.phoneContact.events.firstWhere(
+        (event) => event.label == EventLabel.birthday,
+        orElse: () => Event(month: 0, day: 0),
+      );
+
+      if (birthdayEvent != null && birthdayEvent.year != null) {
+        _birthDate = DateTime(
+          birthdayEvent.year!,
+          birthdayEvent.month,
+          birthdayEvent.day,
+        );
+      } else {
+        _birthDate = null;
+      }
+
+      _residence = fullContact?.phoneContact.addresses.isNotEmpty == true
+      ? fullContact!.phoneContact.addresses.first.address
+      : "";
+
+      _employer = fullContact?.phoneContact.organizations.isNotEmpty == true
+      ? fullContact!.phoneContact.organizations.first.company
+      : "";
+
+      if (fullContact?.phoneContact.photo != null) {
+        _image = Image.memory(fullContact!.phoneContact.photo!, fit: BoxFit.cover);
+      }
+
       _residenceController = TextEditingController(text: _residence);
       _employerController = TextEditingController(text: _employer);
-
-      // Skills
-      _skills.clear();
-      final List<String> skillsFromDb = _contactManager.contactData["skills"] ?? [];
-      _skills.addAll(skillsFromDb);
 
       _isLoading = false;
     });
   }
 
-  Future<void> _pickBirthDate() async {
+   Future<void> _pickBirthDate() async {
     DateTime? pickedDate = await showDatePicker(
       context: context, 
       initialDate: _birthDate ?? DateTime.now(), 
@@ -79,24 +98,41 @@ class _OwnCardViewState extends State<OwnCardView> {
 
     if (pickedDate != null){
       setState(() {
-        _birthDate = pickedDate;
-        _contactManager.updateContactField('birthDate', pickedDate.toIso8601String());
+        if (fullContact != null) {
+          if (fullContact!.phoneContact.events.isNotEmpty) {
+            fullContact!.phoneContact.events.first = Event(year: pickedDate.year, 
+            month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday);
+          }
+          else {
+            fullContact!.phoneContact.events.add(Event(year: pickedDate.year, 
+            month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday));
+          }
+
+          _contactManager.updateDebouncing(fullContact!);
+          _birthDate = pickedDate;
+          
+        } else {
+          throw Exception('FullContact is null');
+        }
       });
     }
   }
   
-  void _addSkill(String newSkill){
-    setState(() {
-      _skills.add(newSkill);
-      _contactManager.updateContactField('skills', _skills);
-    });
+  void _addSkill(String newSkill) async {
+    if (fullContact != null) {
+      Tag newTag = await fullContact!.addTagByName(newSkill);
+      if (mounted) {
+        setState(() => fullContact!.tags.add(newTag));
+      }
+    }
   }
 
-  void _deleteSkill(int index){
-    setState(() {
-      _skills.removeAt(index);
-      _contactManager.updateContactField('skills', _skills);
-    });
+  void _deleteSkill(int index) async {
+    if (fullContact != null) {
+      Tag tagToRemove = fullContact!.tags[index];
+      fullContact!.removeTag(tagToRemove);
+      setState(() => fullContact!.tags.remove(tagToRemove));
+    }
   }
 
   /// This method shows a pop up to create a new entry to a list. This is used for the skills and the notes.
@@ -160,32 +196,31 @@ class _OwnCardViewState extends State<OwnCardView> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    PermissionStatus status;
+  PermissionStatus status;
 
-    if (source == ImageSource.camera){
-      status = await Permission.camera.request();
-    }
-    else {
-      status = await Permission.photos.request();
-    }
+  if (source == ImageSource.camera) {
+    status = await Permission.camera.request();
+  } else {
+    status = await Permission.photos.request();
+  }
 
-    if (status.isGranted){
-      try {
-        final pickedFile = await _picker.pickImage(source: source);
-        if (pickedFile != null) {
-          setState(() {
-            _imageFile = File(pickedFile.path);
-            _contactManager.updateContactField('imagePath', pickedFile.path);
-          });
-        } else if (status.isDenied || status.isPermanentlyDenied) {
-          _showPermissionDialog(source);
-        }
-      } catch (e) {
-        print("Fehler beim Aufnehmen oder Laden des Bildes: $e");
+  if (status.isGranted) {
+    try {
+      final pickedFile = await _picker.pickImage(source: source);
+      if (pickedFile != null) {
+        setState(() {
+          File imageFile = File(pickedFile.path);
+          _image = Image.file(imageFile, fit: BoxFit.cover);
+          _contactManager.saveImageToContact(imageFile, fullContact!);
+        });
       }
+    } catch (e) {
+      print("Error while recording or loading the picture: $e");
     }
-    else {
-      ScaffoldMessenger.of(context).showSnackBar(
+  } else if (status.isDenied || status.isPermanentlyDenied) {
+    _showPermissionDialog(source);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(FlutterI18n.translate(context, 
                                             "person_view.snackbar_no_permission",
@@ -198,8 +233,8 @@ class _OwnCardViewState extends State<OwnCardView> {
                       ),
       ),
     );
-    }    
   }
+}
   
   void _showPermissionDialog(ImageSource source) {
   showDialog(
@@ -283,13 +318,10 @@ class _OwnCardViewState extends State<OwnCardView> {
                     color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: _imageFile != null
+                  child: _image != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            _imageFile!,
-                            fit: BoxFit.cover,
-                          ),
+                          child: _image,
                         )
                       : const Center(
                           child: Icon(Icons.person, size: 100, color: Colors.grey),
@@ -332,9 +364,9 @@ class _OwnCardViewState extends State<OwnCardView> {
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _skills.length,
+                    itemCount: fullContact != null ? fullContact!.tags.length : 0,
                     itemBuilder: (context, index) {
-                      final skill = _skills[index];
+                      final skill = fullContact!.tags[index];
                       return Dismissible(
                         key: UniqueKey(),
                         direction: DismissDirection.startToEnd,
@@ -353,7 +385,7 @@ class _OwnCardViewState extends State<OwnCardView> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               TextFormField(
-                                initialValue: skill,
+                                initialValue: skill.name,
                                 readOnly: true,
                                 maxLines: null,
                                 style: TextStyle(color: colorScheme.onSurfaceVariant),
@@ -516,12 +548,34 @@ class _OwnCardViewState extends State<OwnCardView> {
           onChanged: (newValue) {
             setState(() {
               if (label == 'Wohnort') {
-                _residence = newValue;
-                _contactManager.updateContactField('residence', newValue);
+                if (fullContact != null) {
+                  if (fullContact!.phoneContact.addresses.isNotEmpty) {
+                    fullContact!.phoneContact.addresses.first = Address(newValue);
+                  }
+                  else {
+                    fullContact!.phoneContact.addresses.add(Address(newValue));
+                  }
+                  _contactManager.updateDebouncing(fullContact!);
+                  _residence = newValue;
+                }
+                else {
+                  throw Exception('fullContact is null');
+                }
               }
               else if (label == 'Arbeitgeber / Uni') {
-                _employer = newValue;
-                _contactManager.updateContactField('employer', newValue);
+                if (fullContact != null) {
+                  if (fullContact!.phoneContact.organizations.isNotEmpty) {
+                    fullContact!.phoneContact.organizations.first.company = newValue;
+                  }
+                  else {
+                    fullContact!.phoneContact.organizations.add(Organization(company: newValue));
+                  }
+                  _contactManager.updateDebouncing(fullContact!);
+                  _employer = newValue;
+                }
+                else {
+                  throw Exception('fullContact is null');
+                }
               }
             });
           },
