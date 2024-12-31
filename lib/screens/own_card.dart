@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:connect2/helper/contact_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -110,14 +111,14 @@ class _OwnCardViewState extends State<OwnCardView> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Neuen Skill hinzufügen'),
+              title: Text(FlutterI18n.translate(context, "own_card.add_skill")),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     decoration: InputDecoration(
-                      hintText: "Text eingeben",
-                      errorText: isError ? 'Feld darf nicht leer sein' : null,
+                      hintText: FlutterI18n.translate(context, "own_card.add_new_skill"),
+                      errorText: isError ? FlutterI18n.translate(context, "person_view.empty_field_error") : null,
                     ),
                     onChanged: (value) {
                       setState(() {
@@ -132,13 +133,13 @@ class _OwnCardViewState extends State<OwnCardView> {
               ),
               actions: <Widget>[
                 TextButton(
-                  child: const Text('Abbrechen'),
+                  child: Text(FlutterI18n.translate(context, "person_view.cancel")),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
                 ),
                 TextButton(
-                  child: const Text('Hinzufügen'),
+                  child: Text(FlutterI18n.translate(context, "person_view.add")),
                   onPressed: () {
                     if (itemText.isEmpty) {
                       setState(() {
@@ -197,18 +198,18 @@ class _OwnCardViewState extends State<OwnCardView> {
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: const Text('Berechtigung benötigt'),
-        content: const Text(
-            'Diese Berechtigung wird benötigt, um auf die Kamera oder die Galerie zugreifen zu können.'),
+        title: Text(FlutterI18n.translate(context, "person_view.camera_galarie_permission_required")),
+        content: Text(
+            FlutterI18n.translate(context, "person_view.camera_galarie_permission_explained")),
         actions: [
           TextButton(
-            child: const Text('Abbrechen'),
+            child: Text(FlutterI18n.translate(context, "person_view.cancel")),
             onPressed: () {
               Navigator.of(context).pop();
             },
           ),
           TextButton(
-            child: const Text('Zu den Einstellungen'),
+            child: Text(FlutterI18n.translate(context, "person_view.to_settings")),
             onPressed: () {
               Navigator.of(context).pop();
               openAppSettings();
@@ -230,7 +231,7 @@ class _OwnCardViewState extends State<OwnCardView> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo),
-              title: const Text('Galerie'),
+              title: Text(FlutterI18n.translate(context, "person_view.gallery")),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.gallery);
@@ -238,7 +239,7 @@ class _OwnCardViewState extends State<OwnCardView> {
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt),
-              title: const Text('Kamera'),
+              title: Text(FlutterI18n.translate(context, "person_view.camera")),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.camera);
@@ -303,13 +304,13 @@ class _OwnCardViewState extends State<OwnCardView> {
               // Allgemeine Informationen
               _buildInfoCard(
                 colorScheme,
-                'Allgemeine Informationen',
+                FlutterI18n.translate(context, "person_view.gen_info"),
                 [
-                  _buildDatePickerRow("Geburtsdatum", _birthDate, colorScheme),
+                  _buildDatePickerRow(FlutterI18n.translate(context, "person_view.birthday"), _birthDate, colorScheme),
                   const SizedBox(height: 8),
-                  _buildEditableInfoRow("Wohnort", _residence, colorScheme),
+                  _buildEditableInfoRow(FlutterI18n.translate(context, "person_view.address"), _residence, colorScheme),
                   const SizedBox(height: 8),
-                  _buildEditableInfoRow("Arbeitgeber / Uni", _employer, colorScheme)
+                  _buildEditableInfoRow(FlutterI18n.translate(context, "person_view.employer/uni"), _employer, colorScheme)
                 ],
               ),
 
@@ -318,7 +319,7 @@ class _OwnCardViewState extends State<OwnCardView> {
               // Skills
               _buildInfoCard(
                 colorScheme,
-                'Fähigkeiten',
+                FlutterI18n.translate(context, "person_view.skills"),
                 [
                   ListView.builder(
                     shrinkWrap: true,

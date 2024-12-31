@@ -23,7 +23,10 @@
         "skills": "Skills",
         "notes": "Notes",
         "gen_info": "General Information"
-
+    },
+    "own_card":{
+        "add_skill": "Add a skill",
+        "add_new_skill": "Add a new skill"
     }
 }
 
