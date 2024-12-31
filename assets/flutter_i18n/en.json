@@ -43,6 +43,16 @@
     },
     "graph_screen":{
         "loading": "Loading..."
+    },
+    "first_own_card":{
+        "select_contact": "Select a contact",
+        "new_contact": "New contact",
+        "enter_name": "Enter name",
+        "cancel": "Cancel",
+        "save": "Save",
+        "select_own_contact": "Select your own contact",
+        "existing_contact": "Use existing contact",
+        "create_new": "Create a new contact"
     }
 }
 

@@ -3,6 +3,7 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:connect2/services/contacts_service.dart'; 
 import 'package:connect2/screens/person_card_view.dart';
 import 'package:connect2/screens/own_card.dart';
+import 'package:flutter_i18n/flutter_i18n.dart';
 
 class OwnContactView extends StatefulWidget {
   const OwnContactView({super.key});
@@ -33,7 +34,7 @@ class _OwnContactViewState extends State<OwnContactView> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Wähle einen Kontakt'),
+          title: Text(FlutterI18n.translate(context, "first_own_card.select_contact")),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -63,11 +64,11 @@ class _OwnContactViewState extends State<OwnContactView> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("Neuer Kontakt"),
+          title: Text(FlutterI18n.translate(context, "first_own_card.new_contact")),
           content: TextField(
             controller: nameController,
-            decoration: const InputDecoration(
-              hintText: "Namen eingeben",
+            decoration: InputDecoration(
+              hintText: FlutterI18n.translate(context, "first_own_card.enter_name"),
             ),
           ),
           actions: [
@@ -75,7 +76,7 @@ class _OwnContactViewState extends State<OwnContactView> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text("Abbrechen"),
+              child: Text(FlutterI18n.translate(context, "first_own_card.cancel")),
             ),
             TextButton(
               onPressed: () async {
@@ -90,7 +91,7 @@ class _OwnContactViewState extends State<OwnContactView> {
                     MaterialPageRoute(builder: (context) => PersonCardView(contactId: contactId))); 
                 }
               },
-              child: const Text("Speichern"),
+              child: Text(FlutterI18n.translate(context, "first_own_card.save")),
             ),
           ],
         );
@@ -113,7 +114,7 @@ class _OwnContactViewState extends State<OwnContactView> {
     // If own contact doenst exist, show buttons to select what to do
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Eigenen Kontakt auswählen'),
+        title: Text(FlutterI18n.translate(context, "first_own_card.select_own_contact")),
       ),
       body: Center(
         child: Column(
@@ -121,12 +122,12 @@ class _OwnContactViewState extends State<OwnContactView> {
           children: [
             ElevatedButton(
               onPressed: _selectExistingContact,
-              child: const Text('Bestehenden Kontakt auswählen'),
+              child: Text(FlutterI18n.translate(context, "first_own_card.existing_contact")),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _createNewContact,
-              child: const Text('Neuen Kontakt erstellen'),
+              child: Text(FlutterI18n.translate(context, "first_own_card.create_new")),
             ),
           ],
         ),
