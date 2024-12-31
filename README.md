@@ -93,19 +93,27 @@ Now your emulator is populated with 10 test contacts for use with Connect2. Enjo
 ## Screenshots
 
 ### Home View
+
 Displays all contacts in a list format.
+
 ![home_view](images/home_view.png)
 
 ### Contact Details View
+
 Edit contact information, add relationships, skills, and notes.
+
 ![contact_detail_view](images/contact_detail_view.png)
 
 ### Graph View
+
 Visualize contacts and their relationships in a graph structure.
+
 ![graph_view](images/graph_view.png)
 
 ### Own Contact View
+
 Quickly access your own designated contact.
+
 ![own_contact_view](images/own_contact_view.png)
 
 ---
