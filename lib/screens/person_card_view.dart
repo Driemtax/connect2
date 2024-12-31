@@ -9,6 +9,8 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:connect2/main.dart';
+import 'package:flutter_i18n/flutter_i18n.dart';
+
 
 class PersonCardView extends StatefulWidget {
   final String phoneContactId;
@@ -188,14 +190,14 @@ class _PersonCardViewState extends State<PersonCardView> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Neues Item hinzufügen'),
+              title: Text(FlutterI18n.translate(context, "person_view.new_item")),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     decoration: InputDecoration(
-                      hintText: "Text eingeben",
-                      errorText: isError ? 'Feld darf nicht leer sein' : null,
+                      hintText: FlutterI18n.translate(context, "person_view.enter_text"),
+                      errorText: isError ? FlutterI18n.translate(context, "person_view.empty_field_error") : null,
                     ),
                     onChanged: (value) {
                       setState(() {
@@ -210,13 +212,13 @@ class _PersonCardViewState extends State<PersonCardView> {
               ),
               actions: <Widget>[
                 TextButton(
-                  child: const Text('Abbrechen'),
+                  child: Text(FlutterI18n.translate(context, "person_view.cancel")),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
                 ),
                 TextButton(
-                  child: const Text('Hinzufügen'),
+                  child: Text(FlutterI18n.translate(context, "person_view.add")),
                   onPressed: () {
                     if (itemText.isEmpty) {
                       setState(() {
@@ -263,7 +265,15 @@ class _PersonCardViewState extends State<PersonCardView> {
   } else {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Keine Berechtigung für ${source == ImageSource.camera ? "Kamera" : "Galerie"} erteilt.'),
+        content: Text(FlutterI18n.translate(context, 
+                                            "person_view.snackbar_no_permission",
+                                            translationParams:{
+                                                      "source": source == ImageSource.camera 
+                                                      ? FlutterI18n.translate(context, "person_view.camera") 
+                                                      : FlutterI18n.translate(context, "person_view.gallery"),
+                                                              },
+                                            ),
+                      ),
       ),
     );
   }
@@ -275,18 +285,18 @@ class _PersonCardViewState extends State<PersonCardView> {
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: const Text('Berechtigung benötigt'),
-        content: const Text(
-            'Diese Berechtigung wird benötigt, um auf die Kamera oder die Galerie zugreifen zu können.'),
+        title: Text(FlutterI18n.translate(context, "person_view.camera_galarie_permission_required")),
+        content: Text(
+            FlutterI18n.translate(context, "person_view.camera_galarie_permission_explained")),
         actions: [
           TextButton(
-            child: const Text('Abbrechen'),
+            child: Text(FlutterI18n.translate(context, "person_view.cancel")),
             onPressed: () {
               Navigator.of(context).pop();
             },
           ),
           TextButton(
-            child: const Text('Zu den Einstellungen'),
+            child: Text(FlutterI18n.translate(context, "person_view.to_settings")),
             onPressed: () {
               Navigator.of(context).pop();
               openAppSettings();
@@ -308,7 +318,7 @@ class _PersonCardViewState extends State<PersonCardView> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo),
-              title: const Text('Galerie'),
+              title: Text(FlutterI18n.translate(context, "person_view.gallery")),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.gallery);
@@ -316,7 +326,7 @@ class _PersonCardViewState extends State<PersonCardView> {
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt),
-              title: const Text('Kamera'),
+              title: Text(FlutterI18n.translate(context, "person_view.camera")),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.camera);
@@ -338,7 +348,7 @@ class _PersonCardViewState extends State<PersonCardView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kontakt'),
+        title: Text(FlutterI18n.translate(context, "person_view.contact")),
         backgroundColor: colorScheme.primary,
         foregroundColor: const Color.fromRGBO(255, 255, 255, 1),
         leading: IconButton(
@@ -392,13 +402,13 @@ class _PersonCardViewState extends State<PersonCardView> {
               // Allgemeine Informationen
               _buildInfoCard(
                 colorScheme,
-                'Allgemeine Informationen',
+                FlutterI18n.translate(context, "person_view.gen_info"),
                 [
-                  _buildDatePickerRow("Geburtsdatum", _birthDate, colorScheme),
+                  _buildDatePickerRow(FlutterI18n.translate(context, "person_view.birthday"), _birthDate, colorScheme),
                   const SizedBox(height: 8),
-                  _buildEditableInfoRow("Wohnort", _residence, colorScheme),
+                  _buildEditableInfoRow(FlutterI18n.translate(context, "person_view.address"), _residence, colorScheme),
                   const SizedBox(height: 8),
-                  _buildEditableInfoRow("Arbeitgeber / Uni", _employer, colorScheme)
+                  _buildEditableInfoRow(FlutterI18n.translate(context, "person_view.employer/uni"), _employer, colorScheme)
                 ],
               ),
 
@@ -407,7 +417,7 @@ class _PersonCardViewState extends State<PersonCardView> {
               // Skills
               _buildInfoCard(
                 colorScheme,
-                'Fähigkeiten',
+                FlutterI18n.translate(context, "person_view.skills"),
                 [
                   ListView.builder(
                     shrinkWrap: true,
@@ -464,7 +474,7 @@ class _PersonCardViewState extends State<PersonCardView> {
               // Notizen
               _buildInfoCard(
                 colorScheme,
-                'Notizen',
+                FlutterI18n.translate(context, "person_view.notes"),
                 [
                   ListView.builder(
                     shrinkWrap: true,
@@ -530,13 +540,13 @@ class _PersonCardViewState extends State<PersonCardView> {
 
               _buildInfoCard(
                 colorScheme,
-                'Kontakt Relationen',
+                FlutterI18n.translate(context, "person_view.contact_relation"),
                 [
                   SizedBox(
                     width: double.infinity,
                     child: fullContact != null
                         ? ContactRelationWidget(fullContact: fullContact!)
-                        : const Text('Loading...'),
+                        : Text(FlutterI18n.translate(context, "graph_screen.loading")),
                   ),
                 ],
               )

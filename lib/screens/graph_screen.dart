@@ -2,6 +2,7 @@ import 'package:connect2/components/graph_view/graph_view_canvas.dart';
 import 'package:connect2/components/graph_view/node.dart';
 import 'package:connect2/services/contact_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_i18n/flutter_i18n.dart';
 
 class GraphScreen extends StatefulWidget {
   const GraphScreen({super.key});
@@ -30,7 +31,11 @@ class GraphScreenState extends State<GraphScreen> {
   @override
   Widget build(BuildContext context) {
     if (nodes.isEmpty) {
-      return const Scaffold(body: Center(child: Text("Loading...")));
+      return Scaffold(
+        body: Center(
+          child: Text(FlutterI18n.translate(context, "graph_screen.loading"))
+        )
+      );
     }
 
     return Scaffold(

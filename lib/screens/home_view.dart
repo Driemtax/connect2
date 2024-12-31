@@ -5,6 +5,7 @@ import 'package:connect2/services/contact_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_i18n/flutter_i18n.dart';
 
 // HomeContent Widget: Die scrollbare Liste
 class HomeContent extends StatefulWidget {
@@ -47,7 +48,7 @@ class HomeContentState extends State<HomeContent> {
           children: [
             ListTile(
               leading: const Icon(Icons.create),
-              title: const Text("Manuell erstellen"),
+              title: Text(FlutterI18n.translate(context, "home_view.create_manuall")),
               onTap: () {
                 Navigator.pop(context); 
                 _showNameInputDialog(context); 
@@ -55,7 +56,7 @@ class HomeContentState extends State<HomeContent> {
             ),
             ListTile(
               leading: const Icon(Icons.delete),
-              title: const Text("Eigene Karte zurücksetzen"),
+              title: Text(FlutterI18n.translate(context, "home_view.reset_own_data")),
               onTap: () async {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -78,11 +79,11 @@ class HomeContentState extends State<HomeContent> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("Neuer Kontakt"),
+          title: Text(FlutterI18n.translate(context, "home_view.new_contact")),
           content: TextField(
             controller: nameController,
-            decoration: const InputDecoration(
-              hintText: "Namen eingeben",
+            decoration: InputDecoration(
+              hintText: FlutterI18n.translate(context, "home_view.enter_name"),
             ),
           ),
           actions: [
@@ -90,7 +91,7 @@ class HomeContentState extends State<HomeContent> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text("Abbrechen"),
+              child: Text(FlutterI18n.translate(context, "home_view.cancel")),
             ),
             TextButton(
               onPressed: () async {
@@ -105,7 +106,7 @@ class HomeContentState extends State<HomeContent> {
                     MaterialPageRoute(builder: (context) => PersonCardView(phoneContactId: newFullContact.phoneContact.id))); 
                 }
               },
-              child: const Text("Speichern"),
+              child: Text(FlutterI18n.translate(context, "home_view.save")),
             ),
           ],
         );
@@ -126,15 +127,15 @@ class HomeContentState extends State<HomeContent> {
             onPressed: () {
               loadContacts();
             },
-            child: const Text('Give permissions to laod contacts'), // TODO add i18
-          ), // TODO add i18
+            child: Text(FlutterI18n.translate(context, "home_view.contact_permission_required")), // TODO add i18
+          ),
         )
       );
     }
 
     final List<String> names = contacts.map((e) {
       if (e.displayName.isEmpty) {
-        return 'No Name'; // TODO add i18
+        return FlutterI18n.translate(context, "home_view.no_name");
       }
       return e.displayName;
     }).toList();
@@ -146,11 +147,11 @@ class HomeContentState extends State<HomeContent> {
           onPressed: () {
             _showMenu(context);
           },
-          tooltip: "Menü anzeigen",
+          tooltip: FlutterI18n.translate(context, "home_view.show_menu"),
           child: const Icon(Icons.add),
         ),
         body:
-            Center(child: Text('Es wurden keine Kontakte gefunden.')), // TODO add i18
+            Center(child: Text(FlutterI18n.translate(context, "home_view.no_contacts_found"))), // TODO add i18
       );
     }
 
@@ -159,7 +160,7 @@ class HomeContentState extends State<HomeContent> {
         onPressed: () {
           _showMenu(context);
         },
-        tooltip: 'Menü anzeigen',
+        tooltip: FlutterI18n.translate(context, "home_view.show_menu"),
         child: const Icon(Icons.add),
       ),
       body: contacts.isEmpty

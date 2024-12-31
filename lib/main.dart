@@ -2,6 +2,8 @@ import 'package:connect2/screens/graph_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:connect2/screens/first_own_card.dart';
 import 'package:connect2/screens/home_view.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_i18n/flutter_i18n.dart';
 
 
 void main() async {
@@ -16,6 +18,21 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      locale: Locale('en'), // Hier wird die Sprache festgelegt, standardmäßig Englisch
+      localizationsDelegates: [
+        FlutterI18nDelegate(
+          translationLoader: FileTranslationLoader(
+            basePath: 'assets/flutter_i18n', // Hier wird der Pfad zu deinen JSON-Dateien angegeben
+            fallbackFile: 'en', // Falls keine Übersetzung für die aktuelle Sprache vorhanden ist
+            useCountryCode: false, // Falls du keine länderspezifischen Übersetzungen verwendest
+          ),
+        ),
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: const[
+        Locale('en', '')
+      ],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -52,7 +69,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Contact2 - Boost your network'),
+        title: Text(FlutterI18n.translate(context, "main.app_title")),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Center(
@@ -72,18 +89,18 @@ class _MyHomePageState extends State<MyHomePage> {
         selectedIndex: _selectedIndex,  
         onDestinationSelected: _onItemTapped,  
         indicatorColor: Theme.of(context).colorScheme.inversePrimary,
-        destinations: const <Widget>[
-          NavigationDestination(
+        destinations: <Widget>[
+          const NavigationDestination(
             icon: Icon(Icons.home),
             label: 'Home',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.device_hub),
             label: 'Graph',
           ),
           NavigationDestination(
             icon: Icon(Icons.person),
-            label: 'Karte',
+            label: FlutterI18n.translate(context, "main.navbar_card"),
           ),
         ],
       ),
