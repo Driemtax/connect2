@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:connect2/helper/contact_manager.dart';
 import 'package:connect2/model/full_contact.dart';
 import 'package:connect2/model/model.dart';
@@ -32,7 +33,7 @@ class _PersonCardViewState extends State<PersonCardView> {
   // Notes
   final List<ContactNote> _noteList = [];
 
-  File? _imageFile;
+  Image? _image;
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -79,6 +80,11 @@ class _PersonCardViewState extends State<PersonCardView> {
       ? fullContact!.phoneContact.organizations.first.company
       : "";
 
+      if (fullContact?.phoneContact.photo != null) {
+        _image = Image.memory(fullContact!.phoneContact.photo!, fit: BoxFit.cover);
+      }
+
+
       // Controller
       _residenceController = TextEditingController(text: _residence);
       _employerController = TextEditingController(text: _employer);
@@ -115,7 +121,7 @@ class _PersonCardViewState extends State<PersonCardView> {
             month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday));
           }
 
-          _contactManager.updateFullContact(fullContact!);
+          _contactManager.updateDebouncing(fullContact!);
           _birthDate = pickedDate;
           
         } else {
@@ -247,9 +253,9 @@ class _PersonCardViewState extends State<PersonCardView> {
         final pickedFile = await _picker.pickImage(source: source);
         if (pickedFile != null) {
           setState(() {
-            // TODO Update image on phoneContact
-            // _imageFile = File(pickedFile.path);
-            // _contactManager.updateContactField('imagePath', pickedFile.path);
+            File imageFile = File(pickedFile.path);
+            _image = Image.file(imageFile, fit: BoxFit.cover);
+            _contactManager.saveImageToContact(imageFile, fullContact!);
           });
         } else if (status.isDenied || status.isPermanentlyDenied) {
           _showPermissionDialog(source);
@@ -258,6 +264,9 @@ class _PersonCardViewState extends State<PersonCardView> {
         print("Fehler beim Aufnehmen oder Laden des Bildes: $e");
       }
     }
+    else if (status.isDenied || status.isPermanentlyDenied) {
+          _showPermissionDialog(source);
+        }
     else {
       ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -364,15 +373,11 @@ class _PersonCardViewState extends State<PersonCardView> {
                     color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: _imageFile != null
+                  child: _image != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            _imageFile!,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : const Center(
+                          child: _image,
+                        ) : const Center(
                           child: Icon(Icons.person, size: 100, color: Colors.grey),
                         ),
                 ),
@@ -669,7 +674,7 @@ class _PersonCardViewState extends State<PersonCardView> {
                   else {
                     fullContact!.phoneContact.addresses.add(Address(newValue));
                   }
-                  _contactManager.updateFullContact(fullContact!);
+                  _contactManager.updateDebouncing(fullContact!);
                   _residence = newValue;
                 }
                 else {
@@ -684,7 +689,7 @@ class _PersonCardViewState extends State<PersonCardView> {
                   else {
                     fullContact!.phoneContact.organizations.add(Organization(company: newValue));
                   }
-                  _contactManager.updateFullContact(fullContact!);
+                  _contactManager.updateDebouncing(fullContact!);
                   _employer = newValue;
                 }
                 else {

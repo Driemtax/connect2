@@ -101,7 +101,7 @@ class _OwnCardViewState extends State<OwnCardView> {
               month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday));
             }
 
-          _contactManager.updateFullContact(fullContact!);
+          _contactManager.updateDebouncing(fullContact!);
           _birthDate = pickedDate;
         }
         else {
@@ -541,7 +541,7 @@ class _OwnCardViewState extends State<OwnCardView> {
                   else {
                     fullContact!.phoneContact.addresses.add(Address(newValue));
                   }
-                  _contactManager.updateFullContact(fullContact!);
+                  _contactManager.updateDebouncing(fullContact!);
                   _residence = newValue;
                 }
                 else {
@@ -556,7 +556,7 @@ class _OwnCardViewState extends State<OwnCardView> {
                   else {
                     fullContact!.phoneContact.organizations.add(Organization(company: newValue));
                   }
-                  _contactManager.updateFullContact(fullContact!);
+                  _contactManager.updateDebouncing(fullContact!);
                   _employer = newValue;
                 }
                 else {
