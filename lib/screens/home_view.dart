@@ -60,7 +60,7 @@ class HomeContentState extends State<HomeContent> {
               onTap: () async {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Karte wurde zurückgesetzt.")),
+                  SnackBar(content: Text(FlutterI18n.translate(context, "home_view.reset_own_data_success"))),
                 );
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.clear();
