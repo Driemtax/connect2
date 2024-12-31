@@ -1,5 +1,15 @@
 # Connect2
 
+## Dev Docs
+
+### Database
+
+**Generating the Database Definitions**
+- Run this command in the Terminal
+
+```bash
+flutter pub run build_runner build --delete-conflicting-outputs
+```
 ## Add Test Contacts to your emulator.
 To add the provided Test Contacts to the default Android Contacts App do the following steps:
 1. Start your emulator

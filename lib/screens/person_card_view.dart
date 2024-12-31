@@ -1,23 +1,29 @@
 import 'dart:io';
+import 'package:connect2/components/contact_relation_widget/contact_relation_widget.dart';
 import 'package:connect2/helper/contact_manager.dart';
+import 'package:connect2/model/full_contact.dart';
+import 'package:connect2/model/model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:connect2/models/note.dart';
 import 'package:connect2/main.dart';
+import 'package:flutter_i18n/flutter_i18n.dart';
+
 
 class PersonCardView extends StatefulWidget {
-  final int contactId;
-  const PersonCardView({Key? key, required this.contactId}) : super(key: key);
+  final String phoneContactId;
+  const PersonCardView({Key? key, required this.phoneContactId}) : super(key: key);
   @override
   // ignore: library_private_types_in_public_api
   _PersonCardViewState createState() => _PersonCardViewState();
 }
 
 class _PersonCardViewState extends State<PersonCardView> {
-  late int contactId;
+  late String phoneContactId;
   late ContactManager _contactManager;
+  FullContact? fullContact;
   bool _isLoading = true;
   late TextEditingController _residenceController;
   late TextEditingController _employerController;
@@ -27,19 +33,16 @@ class _PersonCardViewState extends State<PersonCardView> {
   String _residence = "";
   String _employer = "";
   // Notes
-  final List<Note> _noteList = [];
+  final List<ContactNote> _noteList = [];
 
-  // Skills
-  final List<String> _skills = [];
-
-  File? _imageFile;
+  Image? _image;
   final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
-    contactId = widget.contactId;
-    _contactManager = ContactManager.withId(contactId);
+    phoneContactId = widget.phoneContactId;
+    _contactManager = ContactManager.withId(phoneContactId);
     _initializeData();
     
   }
@@ -52,12 +55,36 @@ class _PersonCardViewState extends State<PersonCardView> {
   }
   
   Future<void> _initializeData() async {
-    await _contactManager.loadContactFromDatabase();
+    fullContact = await _contactManager.loadContactFromDatabase();
     setState(() {
-      _name = _contactManager.contactData["name"] ?? "";
-      _birthDate = _contactManager.contactData["birthDate"];
-      _residence = _contactManager.contactData["residence"] ?? "";
-      _employer = _contactManager.contactData["employer"] ?? "";
+      _name = fullContact!.phoneContact.displayName;
+
+      Event? birthdayEvent = fullContact?.phoneContact.events.firstWhere(
+        (event) => event.label == EventLabel.birthday,
+        orElse: () => Event(month: 0, day: 0),
+      );
+
+      if (birthdayEvent != null && birthdayEvent.year != null) {
+        _birthDate = DateTime(
+          birthdayEvent.year!,
+          birthdayEvent.month,
+          birthdayEvent.day,
+        );
+      } else {
+        _birthDate = null;
+      }
+
+      _residence = fullContact?.phoneContact.addresses.isNotEmpty == true
+      ? fullContact!.phoneContact.addresses.first.address
+      : "";
+
+      _employer = fullContact?.phoneContact.organizations.isNotEmpty == true
+      ? fullContact!.phoneContact.organizations.first.company
+      : "";
+
+      if (fullContact?.phoneContact.photo != null) {
+        _image = Image.memory(fullContact!.phoneContact.photo!, fit: BoxFit.cover);
+      }
 
       // Controller
       _residenceController = TextEditingController(text: _residence);
@@ -65,19 +92,10 @@ class _PersonCardViewState extends State<PersonCardView> {
 
       // Notes
       _noteList.clear();
-      final List<Map<String, dynamic>> notesFromDb = _contactManager.contactData["notes"] ?? [];
+      final List<ContactNote> notesFromDb= fullContact!.notes;
       for (var noteData in notesFromDb) {
-        _noteList.add(Note(
-          date: noteData["date"] ?? "",
-          text: noteData["text"] ?? "",
-        ));
+        _noteList.add(noteData);
       }
-
-
-      // Skills
-      _skills.clear();
-      final List<String> skillsFromDb = _contactManager.contactData["skills"] ?? [];
-      _skills.addAll(skillsFromDb);
 
       _isLoading = false;
     });
@@ -93,39 +111,71 @@ class _PersonCardViewState extends State<PersonCardView> {
 
     if (pickedDate != null){
       setState(() {
-        _birthDate = pickedDate;
-        _contactManager.updateContactField('birthDate', pickedDate.toIso8601String());
+        if (fullContact != null) {
+          if (fullContact!.phoneContact.events.isNotEmpty) {
+            fullContact!.phoneContact.events.first = Event(year: pickedDate.year, 
+            month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday);
+          }
+          else {
+            fullContact!.phoneContact.events.add(Event(year: pickedDate.year, 
+            month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday));
+          }
+
+          _contactManager.updateDebouncing(fullContact!);
+          _birthDate = pickedDate;
+          
+        } else {
+          throw Exception('FullContact is null');
+        }
       });
     }
   }
 
-  void _addNote(String newText) {
-    setState(() {
-      String formattedDate = DateFormat('dd.MM.yyyy').format(DateTime.now());
-      _noteList.add(Note(date: formattedDate, text: newText));
-      _contactManager.updateContactField('notes', _noteList.map((note) => note.toJson()).toList());
-    });
+  Future<void> _addNote(String newText) async {
+  if (fullContact != null) {
+    try {
+      DateTime formattedDate = DateTime.now();
+      ContactNote newNote = await fullContact!.addNewNote(newText, formattedDate);
+      setState(() {
+        _noteList.add(newNote);
+      });
+    } catch (error) {
+      throw Exception('Error while adding the note: $error');
+    }
+  } else {
+    throw Exception('FullContact is null');
   }
+}
+
 
   void _deleteNote(int index) {
     setState(() {
-      _noteList.removeAt(index);
-      _contactManager.updateContactField('notes', _noteList.map((note) => note.toJson()).toList());
+      ContactNote noteToDelete = _noteList[index];
+      if (fullContact != null) {
+        fullContact!.deleteNote(noteToDelete);
+        _noteList.remove(noteToDelete);
+      }
+      else {
+        throw Exception('FullContact is null');
+      }
     });
   }
 
-  void _addSkill(String newSkill){
-    setState(() {
-      _skills.add(newSkill);
-      _contactManager.updateContactField('skills', _skills);
-    });
+  void _addSkill(String newSkill) async {
+    if (fullContact != null) {
+      Tag newTag = await fullContact!.addTagByName(newSkill);
+      if (mounted) {
+        setState(() => fullContact!.tags.add(newTag));
+      }
+    }
   }
 
-  void _deleteSkill(int index){
-    setState(() {
-      _skills.removeAt(index);
-      _contactManager.updateContactField('skills', _skills);
-    });
+  void _deleteSkill(int index) async {
+    if (fullContact != null) {
+      Tag tagToRemove = fullContact!.tags[index];
+      fullContact!.removeTag(tagToRemove);
+      setState(() => fullContact!.tags.remove(tagToRemove));
+    }
   }
 
   /// This method shows a pop up to create a new entry to a list. This is used for the skills and the notes.
@@ -140,14 +190,14 @@ class _PersonCardViewState extends State<PersonCardView> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Neues Item hinzufügen'),
+              title: Text(FlutterI18n.translate(context, "person_view.new_item")),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     decoration: InputDecoration(
-                      hintText: "Text eingeben",
-                      errorText: isError ? 'Feld darf nicht leer sein' : null,
+                      hintText: FlutterI18n.translate(context, "person_view.enter_text"),
+                      errorText: isError ? FlutterI18n.translate(context, "person_view.empty_field_error") : null,
                     ),
                     onChanged: (value) {
                       setState(() {
@@ -162,13 +212,13 @@ class _PersonCardViewState extends State<PersonCardView> {
               ),
               actions: <Widget>[
                 TextButton(
-                  child: const Text('Abbrechen'),
+                  child: Text(FlutterI18n.translate(context, "person_view.cancel")),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
                 ),
                 TextButton(
-                  child: const Text('Hinzufügen'),
+                  child: Text(FlutterI18n.translate(context, "person_view.add")),
                   onPressed: () {
                     if (itemText.isEmpty) {
                       setState(() {
@@ -189,56 +239,64 @@ class _PersonCardViewState extends State<PersonCardView> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    PermissionStatus status;
+  PermissionStatus status;
 
-    if (source == ImageSource.camera){
-      status = await Permission.camera.request();
-    }
-    else {
-      status = await Permission.photos.request();
-    }
+  if (source == ImageSource.camera) {
+    status = await Permission.camera.request();
+  } else {
+    status = await Permission.photos.request();
+  }
 
-    if (status.isGranted){
-      try {
-        final pickedFile = await _picker.pickImage(source: source);
-        if (pickedFile != null) {
-          setState(() {
-            _imageFile = File(pickedFile.path);
-            _contactManager.updateContactField('imagePath', pickedFile.path);
-          });
-        } else if (status.isDenied || status.isPermanentlyDenied) {
-          _showPermissionDialog(source);
-        }
-      } catch (e) {
-        print("Fehler beim Aufnehmen oder Laden des Bildes: $e");
+  if (status.isGranted) {
+    try {
+      final pickedFile = await _picker.pickImage(source: source);
+      if (pickedFile != null) {
+        setState(() {
+          File imageFile = File(pickedFile.path);
+          _image = Image.file(imageFile, fit: BoxFit.cover);
+          _contactManager.saveImageToContact(imageFile, fullContact!);
+        });
       }
+    } catch (e) {
+      print("Error while recording or loading the picture: $e");
     }
-    else {
-      ScaffoldMessenger.of(context).showSnackBar(
+  } else if (status.isDenied || status.isPermanentlyDenied) {
+    _showPermissionDialog(source);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Keine Berechtigung für ${source == ImageSource.camera ? "Kamera" : "Galerie"} erteilt.'),
+        content: Text(FlutterI18n.translate(context, 
+                                            "person_view.snackbar_no_permission",
+                                            translationParams:{
+                                                      "source": source == ImageSource.camera 
+                                                      ? FlutterI18n.translate(context, "person_view.camera") 
+                                                      : FlutterI18n.translate(context, "person_view.gallery"),
+                                                              },
+                                            ),
+                      ),
       ),
     );
-    }    
   }
+}
+
   
   void _showPermissionDialog(ImageSource source) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: const Text('Berechtigung benötigt'),
-        content: const Text(
-            'Diese Berechtigung wird benötigt, um auf die Kamera oder die Galerie zugreifen zu können.'),
+        title: Text(FlutterI18n.translate(context, "person_view.camera_galarie_permission_required")),
+        content: Text(
+            FlutterI18n.translate(context, "person_view.camera_galarie_permission_explained")),
         actions: [
           TextButton(
-            child: const Text('Abbrechen'),
+            child: Text(FlutterI18n.translate(context, "person_view.cancel")),
             onPressed: () {
               Navigator.of(context).pop();
             },
           ),
           TextButton(
-            child: const Text('Zu den Einstellungen'),
+            child: Text(FlutterI18n.translate(context, "person_view.to_settings")),
             onPressed: () {
               Navigator.of(context).pop();
               openAppSettings();
@@ -260,7 +318,7 @@ class _PersonCardViewState extends State<PersonCardView> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo),
-              title: const Text('Galerie'),
+              title: Text(FlutterI18n.translate(context, "person_view.gallery")),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.gallery);
@@ -268,7 +326,7 @@ class _PersonCardViewState extends State<PersonCardView> {
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt),
-              title: const Text('Kamera'),
+              title: Text(FlutterI18n.translate(context, "person_view.camera")),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.camera);
@@ -290,7 +348,7 @@ class _PersonCardViewState extends State<PersonCardView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kontakt'),
+        title: Text(FlutterI18n.translate(context, "person_view.contact")),
         backgroundColor: colorScheme.primary,
         foregroundColor: const Color.fromRGBO(255, 255, 255, 1),
         leading: IconButton(
@@ -319,15 +377,11 @@ class _PersonCardViewState extends State<PersonCardView> {
                     color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: _imageFile != null
+                  child: _image != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            _imageFile!,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : const Center(
+                          child: _image,
+                        ) : const Center(
                           child: Icon(Icons.person, size: 100, color: Colors.grey),
                         ),
                 ),
@@ -348,13 +402,13 @@ class _PersonCardViewState extends State<PersonCardView> {
               // Allgemeine Informationen
               _buildInfoCard(
                 colorScheme,
-                'Allgemeine Informationen',
+                FlutterI18n.translate(context, "person_view.gen_info"),
                 [
-                  _buildDatePickerRow("Geburtsdatum", _birthDate, colorScheme),
+                  _buildDatePickerRow(FlutterI18n.translate(context, "person_view.birthday"), _birthDate, colorScheme),
                   const SizedBox(height: 8),
-                  _buildEditableInfoRow("Wohnort", _residence, colorScheme),
+                  _buildEditableInfoRow(FlutterI18n.translate(context, "person_view.address"), _residence, colorScheme),
                   const SizedBox(height: 8),
-                  _buildEditableInfoRow("Arbeitgeber / Uni", _employer, colorScheme)
+                  _buildEditableInfoRow(FlutterI18n.translate(context, "person_view.employer/uni"), _employer, colorScheme)
                 ],
               ),
 
@@ -363,14 +417,14 @@ class _PersonCardViewState extends State<PersonCardView> {
               // Skills
               _buildInfoCard(
                 colorScheme,
-                'Fähigkeiten',
+                FlutterI18n.translate(context, "person_view.skills"),
                 [
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _skills.length,
+                    itemCount: fullContact != null ? fullContact!.tags.length : 0,
                     itemBuilder: (context, index) {
-                      final skill = _skills[index];
+                      final skill = fullContact!.tags[index];
                       return Dismissible(
                         key: UniqueKey(),
                         direction: DismissDirection.startToEnd,
@@ -389,7 +443,7 @@ class _PersonCardViewState extends State<PersonCardView> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               TextFormField(
-                                initialValue: skill,
+                                initialValue: skill.name,
                                 readOnly: true,
                                 maxLines: null,
                                 style: TextStyle(color: colorScheme.onSurfaceVariant),
@@ -420,14 +474,14 @@ class _PersonCardViewState extends State<PersonCardView> {
               // Notizen
               _buildInfoCard(
                 colorScheme,
-                'Notizen',
+                FlutterI18n.translate(context, "person_view.notes"),
                 [
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _noteList.length,
                     itemBuilder: (context, index) {
-                      final notiz = _noteList[index];
+                      final note = _noteList[index];
                       return Dismissible(
                         key: UniqueKey(),
                         direction: DismissDirection.startToEnd,
@@ -446,7 +500,7 @@ class _PersonCardViewState extends State<PersonCardView> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                notiz.date,
+                                DateFormat('dd.MM.yyyy').format(note.date ?? DateTime.now()),
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: colorScheme.onSurface,
@@ -454,7 +508,7 @@ class _PersonCardViewState extends State<PersonCardView> {
                               ),
                               const SizedBox(height: 4),
                               TextFormField(
-                                initialValue: notiz.text,
+                                initialValue: note.note,
                                 readOnly: true,
                                 maxLines: null,
                                 style: TextStyle(color: colorScheme.onSurfaceVariant),
@@ -478,9 +532,26 @@ class _PersonCardViewState extends State<PersonCardView> {
                   FloatingActionButton.small(
                   onPressed: () => _showAddItemDialog(_addNote),
                   backgroundColor: colorScheme.primaryContainer,
-                  child: Icon(Icons.add, color: colorScheme.onPrimaryContainer),
-                )
-              ),
+                  child:
+                        Icon(Icons.add, color: colorScheme.onPrimaryContainer),
+                  )),
+
+              const SizedBox(height: 16),
+
+              _buildInfoCard(
+                colorScheme,
+                FlutterI18n.translate(context, "person_view.contact_relation"),
+                [
+                  SizedBox(
+                    width: double.infinity,
+                    child: fullContact != null
+                        ? ContactRelationWidget(fullContact: fullContact!)
+                        : Text(FlutterI18n.translate(context, "graph_screen.loading")),
+                  ),
+                ],
+              )
+
+              
             ],
           ),
         ),
@@ -617,12 +688,34 @@ class _PersonCardViewState extends State<PersonCardView> {
           onChanged: (newValue) {
             setState(() {
               if (label == 'Wohnort') {
-                _residence = newValue;
-                _contactManager.updateContactField('residence', newValue);
+                if (fullContact != null) {
+                  if (fullContact!.phoneContact.addresses.isNotEmpty) {
+                    fullContact!.phoneContact.addresses.first = Address(newValue);
+                  }
+                  else {
+                    fullContact!.phoneContact.addresses.add(Address(newValue));
+                  }
+                  _contactManager.updateDebouncing(fullContact!);
+                  _residence = newValue;
+                }
+                else {
+                  throw Exception('fullContact is null');
+                }
               }
               else if (label == 'Arbeitgeber / Uni') {
-                _employer = newValue;
-                _contactManager.updateContactField('employer', newValue);
+                if (fullContact != null) {
+                  if (fullContact!.phoneContact.organizations.isNotEmpty) {
+                    fullContact!.phoneContact.organizations.first.company = newValue;
+                  }
+                  else {
+                    fullContact!.phoneContact.organizations.add(Organization(company: newValue));
+                  }
+                  _contactManager.updateDebouncing(fullContact!);
+                  _employer = newValue;
+                }
+                else {
+                  throw Exception('fullContact is null');
+                }
               }
             });
           },

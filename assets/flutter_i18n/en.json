@@ -1,0 +1,64 @@
+{
+    "main":{
+        "app_title": "Connect2 - boost your network",
+        "navbar_home": "Home",
+        "navbar_graph": "Graph",
+        "navbar_card": "Own Card"
+    },
+    "person_view":{
+        "new_item": "Add a new item",
+        "enter_text": "Enter text",
+        "empty_field_error": "Field is not allowd to be empty",
+        "cancel": "Cancel",
+        "add": "Add",
+        "camera_galarie_permission_required": "Permission required",
+        "camera_galarie_permission_explained": "This permission is required to access the camera and gallery",
+        "to_settings": "Open settings",
+        "gallery": "Gallery",
+        "camera": "Camera",
+        "contact": "Contact",
+        "birthday": "Date of birth",
+        "address": "Place of residence",
+        "employer/uni": "Employer / University",
+        "skills": "Skills",
+        "notes": "Notes",
+        "gen_info": "General Information",
+        "snackbar_no_permission": "No permission granted for {source}",
+        "contact_relation": "Contact relation"
+    },
+    "own_card":{
+        "add_skill": "Add a skill",
+        "add_new_skill": "Add a new skill"
+    },
+    "home_view":{
+        "import_QR": "Import from QR-Code",
+        "create_manuall": "Create manually",
+        "reset_own_data": "Reset your own card",
+        "reset_own_data_success": "Successfully reseted",
+        "new_contact": "New contact",
+        "enter_name": "Enter name",
+        "cancel": "Cancel",
+        "save": "Save",
+        "contact_permission_required": "Give permissions to laod contacts",
+        "no_name": "No name",
+        "show_menu": "Display menu",
+        "no_contacts_found": "No contacts were found"
+    },
+    "graph_screen":{
+        "loading": "Loading..."
+    },
+    "first_own_card":{
+        "select_contact": "Select a contact",
+        "new_contact": "New contact",
+        "enter_name": "Enter name",
+        "cancel": "Cancel",
+        "save": "Save",
+        "select_own_contact": "Select your own contact",
+        "existing_contact": "Use existing contact",
+        "create_new": "Create a new contact"
+    },
+    "contact_realtion_widget":{
+        "add_realtion":"Add contact realation"
+    }
+}
+
