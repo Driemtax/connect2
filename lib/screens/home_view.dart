@@ -46,13 +46,6 @@ class HomeContentState extends State<HomeContent> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.qr_code),
-              title: const Text("QR-Code importieren"),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.create),
               title: const Text("Manuell erstellen"),
               onTap: () {
@@ -62,10 +55,11 @@ class HomeContentState extends State<HomeContent> {
             ),
             ListTile(
               leading: const Icon(Icons.delete),
-              title: const Text("Daten zurücksetzen"),
+              title: const Text("Eigene Karte zurücksetzen"),
               onTap: () async {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.clear();
+                Navigator.pop(context);
               },
             ),
           ],

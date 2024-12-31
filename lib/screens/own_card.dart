@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:connect2/helper/contact_manager.dart';
 import 'package:connect2/model/full_contact.dart';
+import 'package:connect2/model/model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
@@ -28,10 +29,7 @@ class _OwnCardViewState extends State<OwnCardView> {
   String _residence = "";
   String _employer = "";
 
-  // Skills
-  final List<String> _skills = [];
-
-  File? _imageFile;
+  Image? _image;
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -51,16 +49,24 @@ class _OwnCardViewState extends State<OwnCardView> {
   }
 
   Future<void> _initializeData() async {
-    await _contactManager.loadContactFromDatabase();
+    fullContact = await _contactManager.loadContactFromDatabase();
     setState(() {
       _name = fullContact!.phoneContact.displayName;
 
-      String? date = fullContact?.phoneContact.events
-      .firstWhere(
+      Event? birthdayEvent = fullContact?.phoneContact.events.firstWhere(
         (event) => event.label == EventLabel.birthday,
         orElse: () => Event(month: 0, day: 0),
-      ).toString();
-      _birthDate = date != null ? DateTime.tryParse(date) : null;
+      );
+
+      if (birthdayEvent != null && birthdayEvent.year != null) {
+        _birthDate = DateTime(
+          birthdayEvent.year!,
+          birthdayEvent.month,
+          birthdayEvent.day,
+        );
+      } else {
+        _birthDate = null;
+      }
 
       _residence = fullContact?.phoneContact.addresses.isNotEmpty == true
       ? fullContact!.phoneContact.addresses.first.address
@@ -70,18 +76,18 @@ class _OwnCardViewState extends State<OwnCardView> {
       ? fullContact!.phoneContact.organizations.first.company
       : "";
 
-      // Controller
+      if (fullContact?.phoneContact.photo != null) {
+        _image = Image.memory(fullContact!.phoneContact.photo!, fit: BoxFit.cover);
+      }
+
       _residenceController = TextEditingController(text: _residence);
       _employerController = TextEditingController(text: _employer);
-
-      // Skills
-      // TODO Add SKills here
 
       _isLoading = false;
     });
   }
 
-  Future<void> _pickBirthDate() async {
+   Future<void> _pickBirthDate() async {
     DateTime? pickedDate = await showDatePicker(
       context: context, 
       initialDate: _birthDate ?? DateTime.now(), 
@@ -93,36 +99,39 @@ class _OwnCardViewState extends State<OwnCardView> {
       setState(() {
         if (fullContact != null) {
           if (fullContact!.phoneContact.events.isNotEmpty) {
-              fullContact!.phoneContact.events.first = Event(year: pickedDate.year, 
-              month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday);
-            }
-            else {
-              fullContact!.phoneContact.events.add(Event(year: pickedDate.year, 
-              month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday));
-            }
+            fullContact!.phoneContact.events.first = Event(year: pickedDate.year, 
+            month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday);
+          }
+          else {
+            fullContact!.phoneContact.events.add(Event(year: pickedDate.year, 
+            month: pickedDate.month, day: pickedDate.day, label: EventLabel.birthday));
+          }
 
           _contactManager.updateDebouncing(fullContact!);
           _birthDate = pickedDate;
-        }
-        else {
-          throw Exception("fullContact is null");
+          
+        } else {
+          throw Exception('FullContact is null');
         }
       });
     }
   }
   
-  void _addSkill(String newSkill){
-    setState(() {
-      _skills.add(newSkill);
-      _contactManager.updateContactField('skills', _skills);
-    });
+  void _addSkill(String newSkill) async {
+    if (fullContact != null) {
+      Tag newTag = await fullContact!.addTagByName(newSkill);
+      if (mounted) {
+        setState(() => fullContact!.tags.add(newTag));
+      }
+    }
   }
 
-  void _deleteSkill(int index){
-    setState(() {
-      _skills.removeAt(index);
-      _contactManager.updateContactField('skills', _skills);
-    });
+  void _deleteSkill(int index) async {
+    if (fullContact != null) {
+      Tag tagToRemove = fullContact!.tags[index];
+      fullContact!.removeTag(tagToRemove);
+      setState(() => fullContact!.tags.remove(tagToRemove));
+    }
   }
 
   /// This method shows a pop up to create a new entry to a list. This is used for the skills and the notes.
@@ -186,38 +195,37 @@ class _OwnCardViewState extends State<OwnCardView> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    PermissionStatus status;
+  PermissionStatus status;
 
-    if (source == ImageSource.camera){
-      status = await Permission.camera.request();
-    }
-    else {
-      status = await Permission.photos.request();
-    }
+  if (source == ImageSource.camera) {
+    status = await Permission.camera.request();
+  } else {
+    status = await Permission.photos.request();
+  }
 
-    if (status.isGranted){
-      try {
-        final pickedFile = await _picker.pickImage(source: source);
-        if (pickedFile != null) {
-          setState(() {
-            _imageFile = File(pickedFile.path);
-            _contactManager.updateContactField('imagePath', pickedFile.path);
-          });
-        } else if (status.isDenied || status.isPermanentlyDenied) {
-          _showPermissionDialog(source);
-        }
-      } catch (e) {
-        print("Fehler beim Aufnehmen oder Laden des Bildes: $e");
+  if (status.isGranted) {
+    try {
+      final pickedFile = await _picker.pickImage(source: source);
+      if (pickedFile != null) {
+        setState(() {
+          File imageFile = File(pickedFile.path);
+          _image = Image.file(imageFile, fit: BoxFit.cover);
+          _contactManager.saveImageToContact(imageFile, fullContact!);
+        });
       }
+    } catch (e) {
+      print("Error while recording or loading the picture: $e");
     }
-    else {
-      ScaffoldMessenger.of(context).showSnackBar(
+  } else if (status.isDenied || status.isPermanentlyDenied) {
+    _showPermissionDialog(source);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Keine Berechtigung für ${source == ImageSource.camera ? "Kamera" : "Galerie"} erteilt.'),
       ),
     );
-    }    
   }
+}
   
   void _showPermissionDialog(ImageSource source) {
   showDialog(
@@ -301,13 +309,10 @@ class _OwnCardViewState extends State<OwnCardView> {
                     color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: _imageFile != null
+                  child: _image != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            _imageFile!,
-                            fit: BoxFit.cover,
-                          ),
+                          child: _image,
                         )
                       : const Center(
                           child: Icon(Icons.person, size: 100, color: Colors.grey),
@@ -350,9 +355,9 @@ class _OwnCardViewState extends State<OwnCardView> {
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _skills.length,
+                    itemCount: fullContact != null ? fullContact!.tags.length : 0,
                     itemBuilder: (context, index) {
-                      final skill = _skills[index];
+                      final skill = fullContact!.tags[index];
                       return Dismissible(
                         key: UniqueKey(),
                         direction: DismissDirection.startToEnd,
@@ -371,7 +376,7 @@ class _OwnCardViewState extends State<OwnCardView> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               TextFormField(
-                                initialValue: skill,
+                                initialValue: skill.name,
                                 readOnly: true,
                                 maxLines: null,
                                 style: TextStyle(color: colorScheme.onSurfaceVariant),

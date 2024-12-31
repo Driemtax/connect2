@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:connect2/helper/contact_manager.dart';
 import 'package:connect2/model/full_contact.dart';
 import 'package:connect2/model/model.dart';
@@ -84,7 +83,6 @@ class _PersonCardViewState extends State<PersonCardView> {
         _image = Image.memory(fullContact!.phoneContact.photo!, fit: BoxFit.cover);
       }
 
-
       // Controller
       _residenceController = TextEditingController(text: _residence);
       _employerController = TextEditingController(text: _employer);
@@ -110,7 +108,6 @@ class _PersonCardViewState extends State<PersonCardView> {
 
     if (pickedDate != null){
       setState(() {
-
         if (fullContact != null) {
           if (fullContact!.phoneContact.events.isNotEmpty) {
             fullContact!.phoneContact.events.first = Event(year: pickedDate.year, 
