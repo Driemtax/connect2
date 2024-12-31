@@ -74,12 +74,11 @@ class _MyHomePageState extends State<MyHomePage> {
         indicatorColor: Theme.of(context).colorScheme.inversePrimary,
         destinations: const <Widget>[
           NavigationDestination(
-            selectedIcon: Icon(Icons.home),
-            icon: Icon(Icons.home_outlined),
+            icon: Icon(Icons.home),
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.network_cell),
+            icon: Icon(Icons.device_hub),
             label: 'Graph',
           ),
           NavigationDestination(

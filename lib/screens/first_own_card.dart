@@ -116,6 +116,32 @@ class _OwnContactViewState extends State<OwnContactView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Eigenen Kontakt auswählen'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Was ist das?'),
+                    content: const Text(
+                      'Wählen Sie hier Ihren eigenen Kontakt aus der Liste aus oder erstellen Sie einen neuen Kontakt. Dies ist nur einmalig erforderlich.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: Center(
         child: Column(
