@@ -57,9 +57,12 @@ class HomeContentState extends State<HomeContent> {
               leading: const Icon(Icons.delete),
               title: const Text("Eigene Karte zurücksetzen"),
               onTap: () async {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Karte wurde zurückgesetzt.")),
+                );
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.clear();
-                Navigator.pop(context);
               },
             ),
           ],
