@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:connect2/components/contact_relation/contact_relation_list.dart';
 import 'package:connect2/helper/contact_manager.dart';
 import 'package:connect2/model/full_contact.dart';
 import 'package:connect2/model/model.dart';
@@ -523,6 +524,13 @@ class _PersonCardViewState extends State<PersonCardView> {
                   backgroundColor: colorScheme.primaryContainer,
                   child: Icon(Icons.add, color: colorScheme.onPrimaryContainer),
                 )
+              ),
+
+              const SizedBox(height: 16),
+
+              SizedBox(
+                height: 200,
+                child: fullContact != null ? ContactRelationList(fullContact: fullContact!) : const Text(''),
               ),
             ],
           ),
