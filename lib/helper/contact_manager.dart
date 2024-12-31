@@ -36,8 +36,6 @@ class ContactManager {
   }
 
   Future<FullContact> loadContactFromDatabase() async {
-    // Simuliere das Laden von Daten aus der Datenbank
-    await Future.delayed(const Duration(seconds: 1)); // Simulates Loading Time for now
     FullContact contact = await _service.getFullContact(phoneContactId);
 
     return contact;

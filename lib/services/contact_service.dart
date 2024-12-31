@@ -202,6 +202,31 @@ class ContactService {
     return nodes;
   }
 
+  Future<Map<int, String>> getContactDetailIdToNameMap() async  {
+    Map<int, String> idToNameMap = {};
+    List<ContactDetail> contactDetails =
+        await ContactDetail().select().toList();
+
+    List<Contact> phoneContacts = await getAll();
+    Map<String, Contact> phoneContactMap = {};
+    for (var phoneContact in phoneContacts) {
+      phoneContactMap[phoneContact.id] = phoneContact;
+    }
+
+    for (var contactDetail in contactDetails) {
+      String? phoneContactId = contactDetail.phoneContactId;
+      int? contactDetailId = contactDetail.id;
+      if (phoneContactId != null && contactDetailId != null) {
+        Contact? phoneContact = phoneContactMap[phoneContactId];
+        if (phoneContact != null) {
+          idToNameMap[contactDetailId] = phoneContact.displayName;
+        }
+      } 
+    }
+
+    return idToNameMap;
+  }
+
   // Saves the id of the users own contact.
   ///
   /// This method takes an id and stores it in the shared preferences. This function will only be called once.
