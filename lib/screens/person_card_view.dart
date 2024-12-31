@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:connect2/components/contact_relation/contact_relation_list.dart';
+import 'package:connect2/components/contact_relation_widget/contact_relation_widget.dart';
 import 'package:connect2/helper/contact_manager.dart';
 import 'package:connect2/model/full_contact.dart';
 import 'package:connect2/model/model.dart';
@@ -522,16 +522,26 @@ class _PersonCardViewState extends State<PersonCardView> {
                   FloatingActionButton.small(
                   onPressed: () => _showAddItemDialog(_addNote),
                   backgroundColor: colorScheme.primaryContainer,
-                  child: Icon(Icons.add, color: colorScheme.onPrimaryContainer),
-                )
-              ),
+                  child:
+                        Icon(Icons.add, color: colorScheme.onPrimaryContainer),
+                  )),
 
               const SizedBox(height: 16),
 
-              SizedBox(
-                height: 200,
-                child: fullContact != null ? ContactRelationList(fullContact: fullContact!) : const Text(''),
-              ),
+              _buildInfoCard(
+                colorScheme,
+                'Kontakt Relationen',
+                [
+                  SizedBox(
+                    width: double.infinity,
+                    child: fullContact != null
+                        ? ContactRelationWidget(fullContact: fullContact!)
+                        : const Text('Loading...'),
+                  ),
+                ],
+              )
+
+              
             ],
           ),
         ),
