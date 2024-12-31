@@ -1,0 +1,79 @@
+BEGIN:VCARD
+VERSION:3.0
+FN:Max Mustermann
+N:;Max Mustermann;;;
+BDAY:1990-01-01
+ADR:;;Musterstraße 1;Musterstadt;;12345;Deutschland
+ORG:Musterfirma GmbH
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Anna Beispiel
+N:;Anna Beispiel;;;
+BDAY:1985-02-14
+ADR:;;Beispielweg 2;Beispielstadt;;54321;Deutschland
+ORG:Beispiel AG
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Peter Test
+N:;Peter Test;;;
+BDAY:1978-03-10
+ADR:;;Teststraße 3;Testhausen;;67890;Deutschland
+ORG:Testfirma KG
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Julia Demo
+N:;Julia Demo;;;
+BDAY:1995-07-20
+ADR:;;Demoweg 4;Demostadt;;98765;Deutschland
+ORG:Demo Solutions
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Michael Beispielmann
+N:;Michael Beispielmann;;;
+BDAY:1988-12-05
+ADR:;;Beispielallee 5;Beispielhausen;;11223;Deutschland
+ORG:Beispielmann Consulting
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Sandra Testfrau
+N:;Sandra Testfrau;;;
+BDAY:1992-06-15
+ADR:;;Testgasse 6;Testdorf;;44556;Deutschland
+ORG:Testfrau GmbH
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Thomas Muster
+N:;Thomas Muster;;;
+BDAY:1980-09-30
+ADR:;;Musterallee 7;Musterhausen;;77889;Deutschland
+ORG:Musterwerke AG
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Lisa Beispielkind
+N:;Lisa Beispielkind;;;
+BDAY:1999-04-25
+ADR:;;Beispielstraße 8;Beispieldorf;;33445;Deutschland
+ORG:Beispielkind Services
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Robert Demomann
+BDAY:1983-11-11
+ADR:;;Demostraße 9;Demoville;;55667;Deutschland
+ORG:DemoCorp
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Katrin Testerin
+N:;Katrin Testerin;;;
+BDAY:1993-08-18
+ADR:;;Testallee 10;Teststadt;;99887;Deutschland
+ORG:Testerin Industries
+END:VCARD
