@@ -6,6 +6,24 @@
         "navbar_card": "Own Card"
     },
     "person_view":{
+        "new_item": "Add a new item",
+        "enter_text": "Enter text",
+        "empty_field_error": "Field is not allowd to be empty",
+        "cancel": "Cancel",
+        "add": "Add",
+        "camera_galarie_permission_required": "Permission required",
+        "camera_galarie_permission_explained": "This permission is required to access the camera and gallery",
+        "to_settings": "Open settings",
+        "gallery": "Gallery",
+        "camera": "Camera",
+        "contact": "Contact",
+        "birthday": "Date of birth",
+        "address": "Place of residence",
+        "employer/uni": "Employer / University",
+        "skills": "Skills",
+        "notes": "Notes",
         "gen_info": "General Information"
+
     }
-} 
+}
+
